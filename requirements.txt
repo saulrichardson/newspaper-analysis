@@ -1,0 +1,20 @@
+# This repo depends on the `newsvlm` engine repo for core schemas + helpers.
+# Install the engine first (e.g. `pip install -e ../newspaper-parsing`) then:
+#   pip install -r requirements.txt
+
+# Install this repo as a package (so scripts can import `newsvlm_analysis.*`).
+-e .
+
+numpy
+pydantic>=2
+pandas
+scikit-learn
+pyarrow
+matplotlib
+umap-learn
+hdbscan
+openpyxl
+
+# Provider clients used by some batch/export/labeling workflows.
+openai
+google-genai

@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.log
+.env
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Local run artifacts / scratch
+tmp_*/
+tmp_*
+newsvlm-analysis-local/
+
+# LaTeX build artifacts (keep sources like .tex/.bib/.sty, ignore generated files)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.xdv
+*.pdf

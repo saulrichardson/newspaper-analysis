@@ -1,0 +1,26 @@
+\begin{table}[H]
+\centering
+\caption{LLM-driven section segmentation (excerpt).}
+\label{tab:sections}
+\begin{tabularx}{\textwidth}{lrXr}
+\toprule
+doc\_id & section & title & chars \\
+\midrule
+ad-visor-and-chronicle\_\_2010-05-08 & 1 & Intro article: Safe Blade Safety Cover & 2194 \\
+ad-visor-and-chronicle\_\_2010-05-08 & 2 & Ordinance text: Home Occupations (First copy) & 2560 \\
+ad-visor-and-chronicle\_\_2010-05-08 & 3 & Advertisements \& Notices & 1124 \\
+ad-visor-and-chronicle\_\_2010-05-08 & 4 & Ordinance text: Home Occupations (Second copy) & 5225 \\
+ad-visor-and-chronicle\_\_2010-05-08 & 5 & Advertisements \& Notices (Continuation) & 344 \\
+akron-register-tribune\_\_1974-09-26 & 1 & Preamble, Interpretation \& DEFINITIONS (Zoning Ordinance) & 54861 \\
+akron-register-tribune\_\_1974-09-26 & 2 & Parking, Access, Loading \& General Regulations (Zoning Overview) & 12092 \\
+akron-register-tribune\_\_1974-09-26 & 3 & Solid Waste Ordinance \& City Proceedings (Appendix \& Notices) & 6047 \\
+albert-lea-evening-tribune\_\_1961-10-24 & 1 & Intro / Ordinance Title & 31409 \\
+albert-lea-evening-tribune\_\_1961-10-24 & 2 & Definitions & 8819 \\
+albert-lea-evening-tribune\_\_1961-10-24 & 3 & Establishment of Districts & 3542 \\
+albert-lea-evening-tribune\_\_1961-10-24 & 4 & Regulations for RA Districts and Specific Districts & 6968 \\
+albert-lea-evening-tribune\_\_1961-10-24 & 5 & Board of Zoning Administration; Administration, Permits, Fees, Enforcement, Public Hearings & 32195 \\
+\bottomrule
+\end{tabularx}
+\vspace{0.25em}
+\par\small\textit{This is the key coherence fix: articles/ads/notices are separated from ordinance text before motive labeling + clause extraction.}
+\end{table}

@@ -1,0 +1,34 @@
+You are analyzing clusters of newspaper text excerpts related to zoning and land-use regulation (often legal/ordinance language).
+
+Task
+- Given multiple excerpts that belong to the SAME cluster, propose a human-readable topic label for the cluster.
+- The topic label should describe the underlying subject matter (not the clustering process).
+
+Output format (STRICT)
+Return ONLY valid JSON (no markdown, no code fences) matching:
+{
+  "cluster_id": <integer>,
+  "topic_name": <string>,
+  "topic_description": <string>,
+  "keywords": <array of strings>
+}
+
+Guidelines
+- The goal is NOT to say “this is zoning”. We already know it’s zoning.
+- The goal IS to say what the zoning text is *doing* or *regulating*.
+- Keep `topic_name` short (2–6 words), specific, and action/mechanism-oriented when possible.
+- `topic_description` should be 1–2 sentences in plain language describing the concrete regulatory mechanism.
+- `keywords` should be 6–14 terms/phrases that capture the mechanism (lowercase preferred). Include at least 1–2 mechanism-specific phrases.
+
+Mechanics to prioritize (choose what fits the excerpts)
+- **Action / instrument:** adoption, amendment, rezoning (map change), variance/special exception, conditional use permit, public hearing notice, enforcement/penalties, administration/appeals.
+- **What is regulated:** permitted uses, zoning districts/definitions, setbacks/yards, lot size/lot area, building height, density/dwelling units, parking/loading, signs/billboards, mobile homes/trailer parks, nonconforming uses, subdivision/platting, planned unit developments (PUD), site plans.
+
+Avoid generic labels
+- Do NOT use topic names like “zoning law”, “zoning ordinance”, “zoning and planning”, “land use”, or “municipal ordinances” unless you add a concrete modifier that makes it specific (e.g., “parking requirements”, “mobile home park rules”, “nonconforming uses”).
+- It is OK if the word “zoning” appears in the topic name, but it must NOT be the only informative noun.
+
+When the cluster is mixed/boilerplate
+- If the excerpts are heterogeneous or dominated by boilerplate ordinance language (definitions/section headers without a clear single mechanism), use a broad label like “mixed ordinance boilerplate” or “mixed municipal notices” and say so explicitly in `topic_description`.
+- Do not mention embeddings, clustering, UMAP, HDBSCAN, or “model”.
+- Do not mention “OCR”.

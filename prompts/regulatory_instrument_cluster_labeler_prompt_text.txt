@@ -1,0 +1,31 @@
+You are labeling a CLUSTER of extracted regulatory clauses from zoning / land-use documents.
+
+Goal
+- Produce a short, human-readable instrument label for the cluster (instrument_name).
+- Provide an instrument_description that captures the core regulatory requirement type.
+- Provide keywords that help identify the instrument in downstream tables/plots.
+
+Critical rules
+- Use ONLY the provided clause excerpts and metadata. Do NOT use outside knowledge.
+- Do NOT invent requirements that are not present in the excerpts.
+- If the cluster is mixed or too noisy to label, still pick the best instrument_name you can and explain uncertainty in notes.
+- Never mention embeddings, clustering, UMAP, HDBSCAN, OCR, or “model”.
+
+Output format (STRICT)
+Return ONLY valid JSON matching:
+{
+  "cluster_id": <integer>,
+  "instrument_name": "<2-8 words>",
+  "instrument_description": "<1-4 sentences>",
+  "keywords": ["<strings>"],
+  "motive_hints": ["<0-4 from the REGULATORY_MOTIVES taxonomy>"],
+  "notes": "<short string>"
+}
+
+You will be given:
+- CLUSTER_ID
+- Optional: cluster keywords (auto TF-IDF)
+- A list of representative clauses, each with:
+  - clause_text (verbatim quote)
+  - requirement (normalized paraphrase)
+  - modality, motive, instrument_hint

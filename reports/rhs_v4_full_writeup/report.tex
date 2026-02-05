@@ -1,0 +1,939 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{caption}
+
+\title{Zoning Text Topics and City-by-Time RHS Measures}
+\date{}
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+\section{Overview}
+This document summarizes the topic-discovery and measurement pipeline we applied to zoning-related newspaper text. We updated the prompt used to label discovered text clusters with mechanism-specific, human-readable descriptions, and then assembled a city-by-month panel of right-hand-side (RHS) measures from the labeled text.
+\begin{itemize}
+\item \textbf{Topic discovery:} cluster frequency over time and UMAP scatter plots.
+\item \textbf{City-by-time measures:} dashboards, event-candidate plots, and regime timelines (Sample A).
+\end{itemize}
+\section{Pipeline overview (high level)}
+\begin{itemize}
+\item Each newspaper issue is split into chunks (\~3,000 characters).
+\item Chunks are embedded (OpenAI text embeddings) and clustered (UMAP $\rightarrow$ HDBSCAN) within three corpora: full ordinances, substantial amendments, targeted amendments.
+\item Each discovered cluster is labeled by a language model using a prompt designed to produce mechanism-specific, human-readable labels.
+\item Cluster labels are also mapped into a structured \emph{mechanics schema}: action tags (e.g., rezoning vs text amendment), dimensions (e.g., setbacks, parking), instruments, decision bodies.
+\item We aggregate mechanics tags into a city-by-month panel and construct multiple RHS summaries: level (step-function) and change (jump intensity, regime switches).
+\end{itemize}
+\section{Topic discovery (updated cluster labels)}
+The next pages show updated topic-discovery figures using the updated cluster labels: (i) cluster frequency-over-time (top 50 clusters; legend outside the plot), and (ii) UMAP scatter plots for each corpus. These figures help answer: \emph{what kinds of zoning mechanisms appear in the newspaper text, and when?}
+\subsection{Full Ordinance}
+\paragraph{Top clusters by weight (summary)}
+\input{tables/full\_ordinance__top_clusters_by_weight_share.tex}
+
+\paragraph{Cluster frequency over time (top 50)}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/topics/full\_ordinance\_\_cluster\_frequency\_year.png}
+\end{center}
+\restoregeometry
+\clearpage
+\paragraph{UMAP scatter (clusters labeled)}
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/topics/full\_ordinance\_\_umap\_scatter.png}
+\end{center}
+\restoregeometry
+\clearpage
+\subsection{Amendment Substantial}
+\paragraph{Top clusters by weight (summary)}
+\input{tables/amendment\_substantial__top_clusters_by_weight_share.tex}
+
+\paragraph{Cluster frequency over time (top 50)}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/topics/amendment\_substantial\_\_cluster\_frequency\_year.png}
+\end{center}
+\restoregeometry
+\clearpage
+\paragraph{UMAP scatter (clusters labeled)}
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/topics/amendment\_substantial\_\_umap\_scatter.png}
+\end{center}
+\restoregeometry
+\clearpage
+\subsection{Amendment Targeted}
+\paragraph{Top clusters by weight (summary)}
+\input{tables/amendment\_targeted__top_clusters_by_weight_share.tex}
+
+\paragraph{Cluster frequency over time (top 50)}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/topics/amendment\_targeted\_\_cluster\_frequency\_year.png}
+\end{center}
+\restoregeometry
+\clearpage
+\paragraph{UMAP scatter (clusters labeled)}
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/topics/amendment\_targeted\_\_umap\_scatter.png}
+\end{center}
+\restoregeometry
+\clearpage
+\section{City-by-month RHS measures (what we built)}
+We construct a canonical city-by-month panel (Sample A shown below) with multiple interpretable RHS views:
+\begin{itemize}
+\item \textbf{Mechanics shares (level):} city-month shares of action tags and dimension tags, aggregated from labeled clusters.
+\item \textbf{Step-function state:} forward-filled between observed months (motivated by policy being piecewise-constant between updates).
+\item \textbf{Semantic change intensity:} embedding-based jump measure that spikes when the text content shifts sharply.
+\item \textbf{Mechanics change intensity:} PCA-based jump on the mechanics-tag vectors (spikes when the mechanism mix shifts).
+\item \textbf{Policy regimes:} discrete types (KMeans on PCs) that produce regime-switch event candidates.
+\end{itemize}
+\section{Sample A (top 32 city-state units)}
+To keep plots readable while still being data-rich, Sample A is defined as the top 32 city-state units by total issue coverage (exactly those with at least 100 issues).
+\input{tables/sample_a_top32.tex}
+\section{City-by-city plots (Sample A)}
+For each city, we show: (1) a dashboard of RHS time-series (mechanics shares + change intensity), (2) event-candidate plots for semantic vs mechanics change, and (3) the inferred policy regime timeline. Outcome overlays are included where available (currently only a small 3-city FHFA HPI mapping).
+\subsection{Eau Claire, WI}
+\begin{itemize}
+\item Coverage: 866 issues across 346 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/eau\_claire\_\_wi/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/eau\_claire\_\_wi/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/eau\_claire\_\_wi/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/eau\_claire\_\_wi/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Doylestown, PA}
+\begin{itemize}
+\item Coverage: 687 issues across 398 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/doylestown\_\_pa/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/doylestown\_\_pa/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/doylestown\_\_pa/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/doylestown\_\_pa/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Cedar Rapids, IA}
+\begin{itemize}
+\item Coverage: 411 issues across 303 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/cedar\_rapids\_\_ia/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/cedar\_rapids\_\_ia/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/cedar\_rapids\_\_ia/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/cedar\_rapids\_\_ia/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Bakersfield, CA}
+\begin{itemize}
+\item Coverage: 331 issues across 243 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/bakersfield\_\_ca/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/bakersfield\_\_ca/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/bakersfield\_\_ca/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/bakersfield\_\_ca/regime\_k4.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Outcome overlays (FHFA HPI from FRED; exploratory)}\\
+\includegraphics[width=\linewidth,height=0.45\textheight,keepaspectratio]{figures/cities/bakersfield\_\_ca/outcome\_overlay\_embedding.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.45\textheight,keepaspectratio]{figures/cities/bakersfield\_\_ca/outcome\_overlay\_mechanics.png}
+\end{center}
+\restoregeometry
+\subsection{Corpus Christi, TX}
+\begin{itemize}
+\item Coverage: 304 issues across 175 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/corpus\_christi\_\_tx/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/corpus\_christi\_\_tx/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/corpus\_christi\_\_tx/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/corpus\_christi\_\_tx/regime\_k4.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Outcome overlays (FHFA HPI from FRED; exploratory)}\\
+\includegraphics[width=\linewidth,height=0.45\textheight,keepaspectratio]{figures/cities/corpus\_christi\_\_tx/outcome\_overlay\_embedding.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.45\textheight,keepaspectratio]{figures/cities/corpus\_christi\_\_tx/outcome\_overlay\_mechanics.png}
+\end{center}
+\restoregeometry
+\subsection{Lawrence, KS}
+\begin{itemize}
+\item Coverage: 288 issues across 208 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/lawrence\_\_ks/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/lawrence\_\_ks/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/lawrence\_\_ks/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/lawrence\_\_ks/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Arlington Heights, IL}
+\begin{itemize}
+\item Coverage: 288 issues across 190 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/arlington\_heights\_\_il/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/arlington\_heights\_\_il/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/arlington\_heights\_\_il/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/arlington\_heights\_\_il/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Chester, PA}
+\begin{itemize}
+\item Coverage: 261 issues across 190 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/chester\_\_pa/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/chester\_\_pa/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/chester\_\_pa/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/chester\_\_pa/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Madison, WI}
+\begin{itemize}
+\item Coverage: 188 issues across 130 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/madison\_\_wi/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/madison\_\_wi/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/madison\_\_wi/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/madison\_\_wi/regime\_k4.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Outcome overlays (FHFA HPI from FRED; exploratory)}\\
+\includegraphics[width=\linewidth,height=0.45\textheight,keepaspectratio]{figures/cities/madison\_\_wi/outcome\_overlay\_embedding.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.45\textheight,keepaspectratio]{figures/cities/madison\_\_wi/outcome\_overlay\_mechanics.png}
+\end{center}
+\restoregeometry
+\subsection{Hayward, CA}
+\begin{itemize}
+\item Coverage: 184 issues across 133 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/hayward\_\_ca/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/hayward\_\_ca/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/hayward\_\_ca/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/hayward\_\_ca/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Altoona, PA}
+\begin{itemize}
+\item Coverage: 174 issues across 129 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/altoona\_\_pa/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/altoona\_\_pa/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/altoona\_\_pa/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/altoona\_\_pa/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Hutchinson, KS}
+\begin{itemize}
+\item Coverage: 159 issues across 124 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/hutchinson\_\_ks/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/hutchinson\_\_ks/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/hutchinson\_\_ks/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/hutchinson\_\_ks/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Park Forest, IL}
+\begin{itemize}
+\item Coverage: 158 issues across 110 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/park\_forest\_\_il/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/park\_forest\_\_il/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/park\_forest\_\_il/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/park\_forest\_\_il/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Paris, TX}
+\begin{itemize}
+\item Coverage: 157 issues across 121 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/paris\_\_tx/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/paris\_\_tx/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/paris\_\_tx/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/paris\_\_tx/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Brownsville, TX}
+\begin{itemize}
+\item Coverage: 155 issues across 113 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/brownsville\_\_tx/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/brownsville\_\_tx/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/brownsville\_\_tx/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/brownsville\_\_tx/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{La Crosse, WI}
+\begin{itemize}
+\item Coverage: 153 issues across 98 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/la\_crosse\_\_wi/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/la\_crosse\_\_wi/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/la\_crosse\_\_wi/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/la\_crosse\_\_wi/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Levittown, PA}
+\begin{itemize}
+\item Coverage: 153 issues across 87 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/levittown\_\_pa/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/levittown\_\_pa/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/levittown\_\_pa/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/levittown\_\_pa/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Lincoln, NE}
+\begin{itemize}
+\item Coverage: 152 issues across 98 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/lincoln\_\_ne/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/lincoln\_\_ne/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/lincoln\_\_ne/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/lincoln\_\_ne/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Amarillo, TX}
+\begin{itemize}
+\item Coverage: 150 issues across 91 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/amarillo\_\_tx/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/amarillo\_\_tx/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/amarillo\_\_tx/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/amarillo\_\_tx/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Alamogordo, NM}
+\begin{itemize}
+\item Coverage: 146 issues across 119 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/alamogordo\_\_nm/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/alamogordo\_\_nm/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/alamogordo\_\_nm/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/alamogordo\_\_nm/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Benton Harbor, MI}
+\begin{itemize}
+\item Coverage: 135 issues across 104 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/benton\_harbor\_\_mi/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/benton\_harbor\_\_mi/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/benton\_harbor\_\_mi/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/benton\_harbor\_\_mi/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Gettysburg, PA}
+\begin{itemize}
+\item Coverage: 133 issues across 101 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/gettysburg\_\_pa/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/gettysburg\_\_pa/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/gettysburg\_\_pa/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/gettysburg\_\_pa/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Ames, IA}
+\begin{itemize}
+\item Coverage: 123 issues across 94 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/ames\_\_ia/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/ames\_\_ia/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/ames\_\_ia/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/ames\_\_ia/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Cumberland, MD}
+\begin{itemize}
+\item Coverage: 122 issues across 87 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/cumberland\_\_md/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/cumberland\_\_md/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/cumberland\_\_md/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/cumberland\_\_md/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Janesville, WI}
+\begin{itemize}
+\item Coverage: 114 issues across 81 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/janesville\_\_wi/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/janesville\_\_wi/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/janesville\_\_wi/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/janesville\_\_wi/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Garden City, KS}
+\begin{itemize}
+\item Coverage: 112 issues across 103 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/garden\_city\_\_ks/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/garden\_city\_\_ks/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/garden\_city\_\_ks/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/garden\_city\_\_ks/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Kenosha, WI}
+\begin{itemize}
+\item Coverage: 106 issues across 82 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/kenosha\_\_wi/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/kenosha\_\_wi/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/kenosha\_\_wi/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/kenosha\_\_wi/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Nashua, NH}
+\begin{itemize}
+\item Coverage: 105 issues across 85 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/nashua\_\_nh/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/nashua\_\_nh/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/nashua\_\_nh/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/nashua\_\_nh/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Garland, TX}
+\begin{itemize}
+\item Coverage: 105 issues across 67 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/garland\_\_tx/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/garland\_\_tx/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/garland\_\_tx/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/garland\_\_tx/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Colorado Springs, CO}
+\begin{itemize}
+\item Coverage: 104 issues across 70 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/colorado\_springs\_\_co/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/colorado\_springs\_\_co/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/colorado\_springs\_\_co/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/colorado\_springs\_\_co/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Anderson, IN}
+\begin{itemize}
+\item Coverage: 102 issues across 80 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/anderson\_\_in/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/anderson\_\_in/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/anderson\_\_in/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/anderson\_\_in/regime\_k4.png}
+\end{center}
+\restoregeometry
+\subsection{Creston, IA}
+\begin{itemize}
+\item Coverage: 100 issues across 76 observed months.
+\item The dashboard uses human-readable labels for zoning mechanisms (e.g., ``Setbacks'', ``Parking'', ``Amend zoning map / rezone'').
+\end{itemize}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/cities/creston\_\_ia/dashboard.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.4in}
+\thispagestyle{empty}
+\begin{center}
+\textbf{Event candidates and policy regime timeline}\\
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/creston\_\_ia/event\_embedding\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.34\textheight,keepaspectratio]{figures/cities/creston\_\_ia/event\_mechanics\_jump.png}
+\vspace{0.2em}
+\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{figures/cities/creston\_\_ia/regime\_k4.png}
+\end{center}
+\restoregeometry
+\end{document}

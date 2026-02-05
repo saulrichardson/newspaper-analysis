@@ -1,0 +1,99 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{subcaption}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\title{Zoning Text Topics from Newspaper Issues}
+\date{2026-01-29 23:59}
+\begin{document}
+\maketitle
+\section{Overview}
+This report consolidates the outputs of a topic-discovery pipeline applied to newspaper zoning texts. Issues are pre-classified into three categories (\texttt{full\_ordinance}, \texttt{amendment\_substantial}, and \texttt{amendment\_targeted}). Within each category, we split each issue into roughly 3,000-character chunks, embed each chunk with OpenAI \texttt{text-embedding-3-large}, cluster with UMAP$\rightarrow$HDBSCAN, and label each discovered cluster with OpenAI (Batch).
+
+\textbf{Time-series figure convention.} For readability, the cluster frequency-over-time figures show only the top 50 clusters (by cumulative issue-weighted mass across all years) and intentionally exclude the remaining clusters. We do \emph{not} aggregate the excluded clusters into an \emph{other} band in the plot. All discovered (non-noise) clusters are listed in the appendix.
+\section{Dataset summary}
+\input{tables/dataset_summary.tex}
+\input{tables/clustering_params.tex}
+\subsection{Issue counts by year}
+\input{tables/issue_counts_by_year.tex}
+\section{amendment\_substantial}
+\input{tables/amendment\_substantial__issue_size_stats.tex}
+\input{tables/amendment\_substantial__top_clusters_by_size.tex}
+\input{tables/amendment\_substantial__top_clusters_by_weight.tex}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/amendment\_substantial\_\_cluster\_frequency\_year.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/amendment\_substantial\_\_umap\_scatter.png}
+\end{center}
+\restoregeometry
+\clearpage
+\section{amendment\_targeted}
+\input{tables/amendment\_targeted__issue_size_stats.tex}
+\input{tables/amendment\_targeted__top_clusters_by_size.tex}
+\input{tables/amendment\_targeted__top_clusters_by_weight.tex}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/amendment\_targeted\_\_cluster\_frequency\_year.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/amendment\_targeted\_\_umap\_scatter.png}
+\end{center}
+\restoregeometry
+\clearpage
+\section{full\_ordinance}
+\input{tables/full\_ordinance__issue_size_stats.tex}
+\input{tables/full\_ordinance__top_clusters_by_size.tex}
+\input{tables/full\_ordinance__top_clusters_by_weight.tex}
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/full\_ordinance\_\_cluster\_frequency\_year.png}
+\end{center}
+\restoregeometry
+\clearpage
+\newgeometry{margin=0.25in}
+\thispagestyle{empty}
+\begin{center}
+\includegraphics[width=\linewidth,height=0.98\textheight,keepaspectratio]{figures/full\_ordinance\_\_umap\_scatter.png}
+\end{center}
+\restoregeometry
+\clearpage
+\section{Notes}
+\begin{itemize}
+\item Cluster IDs are only meaningful within a run (not aligned across labels).
+\item HDBSCAN assigns many chunks to noise (cluster $-1$); noise rates are reported in Table~\ref{tab:dataset-summary}.
+\item The `weight' statistic in top-cluster tables is $\sum$doc\_weight across chunks, where doc\_weight = 1/(\# chunks in issue).
+\end{itemize}
+\clearpage
+\appendix
+\section{Appendix: All clusters}
+This appendix lists every discovered (non-noise) cluster for each label, sorted by cluster weight.
+\subsection{amendment\_substantial}
+\input{tables/amendment\_substantial__all_clusters.tex}
+\clearpage
+\subsection{amendment\_targeted}
+\input{tables/amendment\_targeted__all_clusters.tex}
+\clearpage
+\subsection{full\_ordinance}
+\input{tables/full\_ordinance__all_clusters.tex}
+\clearpage
+\end{document}

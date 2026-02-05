@@ -1,0 +1,25 @@
+{
+  "cluster_label_dir_name": "cluster_topic_labels_mechanics_v4_gpt5nano_20260130_013333",
+  "corpus_manifest": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/vast_snap_20260130_041623/corpus_union_20260123_100834/merged_manifest.jsonl",
+  "created_at": "2026-01-29 23:59",
+  "emit_year_counts_table": true,
+  "figure_layout": "fullpage",
+  "include_scatter": true,
+  "include_year_frequency_plots": true,
+  "runs": [
+    {
+      "label": "amendment_substantial",
+      "root": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/vast_snap_20260130_041623/amendment_substantial"
+    },
+    {
+      "label": "amendment_targeted",
+      "root": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/vast_snap_20260130_041623/amendment_targeted"
+    },
+    {
+      "label": "full_ordinance",
+      "root": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/vast_snap_20260130_041623/full_ordinance"
+    }
+  ],
+  "top_clusters": 15,
+  "year_plot_dir_name": "plots_chunks_labeled_top50_noother_mechanics_v4_gpt5nano_legend_outside_20260130_235600"
+}

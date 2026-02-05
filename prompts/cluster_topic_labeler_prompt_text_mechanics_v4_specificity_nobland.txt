@@ -1,0 +1,182 @@
+You are analyzing clusters of newspaper text excerpts.
+Many clusters contain zoning / land-use ordinance language, but some clusters may be mixed or non-zoning.
+
+Goal
+- Produce a cluster label that explains what the text is *doing* (regulatory mechanism), not just “zoning”.
+- Additionally, produce structured *mechanics tags* (controlled vocabulary) so we can analyze zoning mechanisms over time.
+
+Output format (STRICT)
+Return ONLY valid JSON (no markdown, no code fences) matching:
+{
+  "cluster_id": <integer>,
+  "topic_name": <string>,
+  "topic_description": <string>,
+  "keywords": <array of strings>,
+  "zoning_relevance": <"zoning" | "mixed" | "non_zoning">,
+  "mechanics": {
+    "action_tags": <array of strings>,
+    "dimension_tags": <array of strings>,
+    "decision_body_tags": <array of strings>,
+    "instrument_tags": <array of strings>,
+    "district_tokens": <array of strings>,
+    "mechanism_phrases": <array of strings>,
+    "evidence": <array of objects { "tag": <string>, "example_numbers": <array[int]> }>
+  }
+}
+
+How to think about "mechanics"
+1) First decide zoning_relevance:
+   - "zoning": the dominant theme is zoning/land-use regulation or zoning decisions
+   - "mixed": multiple unrelated topics; zoning appears but is not dominant
+   - "non_zoning": clearly not zoning/land-use
+
+2) Then identify what is happening in the text:
+   - Is it a map change (rezoning)?
+   - A text amendment to the code?
+   - A permit/variance/appeal process?
+   - A definition/district structure section?
+   - A substantive rule (setbacks, lot area, density, height, uses, parking, signs, etc.)?
+
+Topic name (topic_name): V4 strict specificity rules (most important)
+- topic_name must be plain English (no snake_case, no underscore tokens, no prefixes like "amend_text:").
+- topic_name should be short (aim: 6–12 words), information-dense, and mechanism-oriented.
+- topic_name must NOT be a generic “this is zoning” label.
+
+Generic-label prohibition (do NOT do this)
+- Do NOT output topic_name that is basically just: zoning / ordinance / regulation / law.
+- In particular, topic_name MUST NOT contain these phrases (case-insensitive):
+  - "zoning ordinance"
+  - "zoning regulations" or "zoning regulation"
+  - "zoning law"
+  - "land use"
+  - "municipal ordinance"
+  - "adopt zoning" / "adoption of zoning"
+
+If the excerpts themselves repeatedly say those generic phrases (common in legal notices),
+you still MUST NOT copy them into topic_name. Replace with a specific mechanism+content description.
+
+Content anchor requirement (prevents bland labels)
+If zoning_relevance="zoning", topic_name MUST include at least ONE concrete anchor from:
+  A) A rule/dimension anchor: setbacks, lot size/lot area, height, density, dwelling units, parking, signs, permitted uses, conditional uses, nonconforming uses, subdivision standards, site plan requirements, PUD standards.
+  B) A district/map anchor: rezoning, zoning map, district boundary, district classification, zone code tokens (e.g., R-1, C-2), overlay.
+  C) A process/decision anchor (ONLY if the cluster is mostly procedural): variance hearing, conditional use hearing, special exception, appeal, planning commission recommendation, city council vote, referendum, affidavit of publication.
+
+If the cluster is procedural and the excerpts do not include substantive details,
+say so explicitly WITHOUT using generic zoning phrases.
+- Example: "Affidavit of publication for rezoning hearing notice (details absent)"
+- Example: "Public hearing notice for district map change (substance not specified)"
+
+If the cluster is about adoption/amendment, say *what* is adopted/amended
+- BAD: "Public hearing notice to adopt zoning ordinance provisions"
+- GOOD: "Public hearing notice to adopt district map and permitted uses"
+- BAD: "Public hearing notice to amend zoning ordinance"
+- GOOD: "Public hearing notice to amend setbacks and parking minimums"
+
+Controlled vocabularies (use ONLY these exact strings)
+action_tags (choose all that apply)
+- adopt_ordinance
+- amend_text
+- amend_map_rezone
+- annexation
+- create_district
+- create_overlay
+- definitions
+- nonconforming
+- administration
+- public_hearing_notice
+- appeals
+- variance
+- conditional_use
+- special_exception
+- site_plan
+- subdivision_plat
+- pud
+- enforcement_penalties
+- permit_licensing
+- fees
+
+dimension_tags (what the zoning is regulating; choose all that apply)
+- permitted_uses
+- conditional_uses
+- prohibited_uses
+- setbacks
+- yards
+- lot_area
+- lot_width
+- building_height
+- floor_area_ratio
+- lot_coverage
+- density
+- dwelling_units
+- parking
+- loading
+- signs
+- billboards
+- landscaping_buffers
+- fences_walls
+- accessory_structures
+- home_occupations
+- mobile_homes
+- trailer_parks
+- manufactured_housing
+- districts
+- definitions_terms
+- nonconforming_uses
+- subdivision_standards
+- site_plan_requirements
+- pud_standards
+- floodplain
+- airport
+- adult_business
+- alcohol
+- historic_district
+- utilities_sewer_water
+
+decision_body_tags (who is acting; choose all that apply; if unclear use "unknown")
+- city_council
+- planning_commission
+- zoning_board
+- board_of_adjustment
+- board_of_appeals
+- county_commission
+- town_board
+- zoning_administrator
+- unknown
+
+instrument_tags (what kind of legal/procedural instrument; choose all that apply)
+- ordinance
+- resolution
+- zoning_code
+- zoning_map
+- petition
+- application
+- permit
+- notice
+- hearing
+- minutes
+- report_recommendation
+- affidavit_publication
+
+district_tokens (free text but grounded; extract what you see)
+- Provide 0–30 short tokens that name the zoning districts / overlays / zone codes mentioned.
+- Examples: "R-1", "R-2", "C-2", "I-1", "A-1", "PBC", "BT", "floodplain overlay", "historic district".
+- Do NOT include ordinance numbers, page numbers, deed book references, or other non-district identifiers.
+
+mechanism_phrases (free text, but MUST be grounded in the excerpts)
+- Provide 6–14 short, concrete phrases describing the actual rule or action.
+- Prefer phrases like “reduce front-yard setback”, “rezone parcel from R-1 to C-2”, “minimum lot area per dwelling unit”, “nonconforming use continuation rules”.
+- Include numbers/units ONLY if clearly present.
+
+evidence
+- For EACH tag you include in action_tags/dimension_tags/decision_body_tags/instrument_tags, add at least one evidence entry:
+  { "tag": "<the tag>", "example_numbers": [<integers like 1,2,3>] }
+- Use the example numbers from the prompt ([EXAMPLE 1], [EXAMPLE 2], ...).
+- Evidence must reflect what is actually in the excerpts; do not invent.
+
+Final self-check (do this BEFORE you output JSON)
+- If topic_name contains any generic phrase banned above, rewrite it until it does not.
+- If topic_name would still make sense if you delete all words except generic words like “zoning/ordinance/regulation/law”, it is too generic; rewrite it.
+- If zoning_relevance="zoning" and topic_name lacks a content anchor (rule/district/process specifics), rewrite it.
+- Ensure topic_name is not snake_case and does not start with a raw tag name like "amend_text".
+
+Never mention embeddings, clustering, UMAP, HDBSCAN, OCR, or “model”.

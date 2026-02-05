@@ -1,0 +1,258 @@
+[
+  {
+    "city_key": "eau_claire__wi",
+    "city_name": "Eau Claire",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 866,
+    "n_months_obs": 346,
+    "state_abbr": "wi"
+  },
+  {
+    "city_key": "doylestown__pa",
+    "city_name": "Doylestown",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 687,
+    "n_months_obs": 398,
+    "state_abbr": "pa"
+  },
+  {
+    "city_key": "cedar_rapids__ia",
+    "city_name": "Cedar Rapids",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 411,
+    "n_months_obs": 303,
+    "state_abbr": "ia"
+  },
+  {
+    "city_key": "bakersfield__ca",
+    "city_name": "Bakersfield",
+    "has_outcome_overlay": true,
+    "n_issues_sum": 331,
+    "n_months_obs": 243,
+    "state_abbr": "ca"
+  },
+  {
+    "city_key": "corpus_christi__tx",
+    "city_name": "Corpus Christi",
+    "has_outcome_overlay": true,
+    "n_issues_sum": 304,
+    "n_months_obs": 175,
+    "state_abbr": "tx"
+  },
+  {
+    "city_key": "lawrence__ks",
+    "city_name": "Lawrence",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 288,
+    "n_months_obs": 208,
+    "state_abbr": "ks"
+  },
+  {
+    "city_key": "arlington_heights__il",
+    "city_name": "Arlington Heights",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 288,
+    "n_months_obs": 190,
+    "state_abbr": "il"
+  },
+  {
+    "city_key": "chester__pa",
+    "city_name": "Chester",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 261,
+    "n_months_obs": 190,
+    "state_abbr": "pa"
+  },
+  {
+    "city_key": "madison__wi",
+    "city_name": "Madison",
+    "has_outcome_overlay": true,
+    "n_issues_sum": 188,
+    "n_months_obs": 130,
+    "state_abbr": "wi"
+  },
+  {
+    "city_key": "hayward__ca",
+    "city_name": "Hayward",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 184,
+    "n_months_obs": 133,
+    "state_abbr": "ca"
+  },
+  {
+    "city_key": "altoona__pa",
+    "city_name": "Altoona",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 174,
+    "n_months_obs": 129,
+    "state_abbr": "pa"
+  },
+  {
+    "city_key": "hutchinson__ks",
+    "city_name": "Hutchinson",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 159,
+    "n_months_obs": 124,
+    "state_abbr": "ks"
+  },
+  {
+    "city_key": "park_forest__il",
+    "city_name": "Park Forest",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 158,
+    "n_months_obs": 110,
+    "state_abbr": "il"
+  },
+  {
+    "city_key": "paris__tx",
+    "city_name": "Paris",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 157,
+    "n_months_obs": 121,
+    "state_abbr": "tx"
+  },
+  {
+    "city_key": "brownsville__tx",
+    "city_name": "Brownsville",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 155,
+    "n_months_obs": 113,
+    "state_abbr": "tx"
+  },
+  {
+    "city_key": "la_crosse__wi",
+    "city_name": "La Crosse",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 153,
+    "n_months_obs": 98,
+    "state_abbr": "wi"
+  },
+  {
+    "city_key": "levittown__pa",
+    "city_name": "Levittown",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 153,
+    "n_months_obs": 87,
+    "state_abbr": "pa"
+  },
+  {
+    "city_key": "lincoln__ne",
+    "city_name": "Lincoln",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 152,
+    "n_months_obs": 98,
+    "state_abbr": "ne"
+  },
+  {
+    "city_key": "amarillo__tx",
+    "city_name": "Amarillo",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 150,
+    "n_months_obs": 91,
+    "state_abbr": "tx"
+  },
+  {
+    "city_key": "alamogordo__nm",
+    "city_name": "Alamogordo",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 146,
+    "n_months_obs": 119,
+    "state_abbr": "nm"
+  },
+  {
+    "city_key": "benton_harbor__mi",
+    "city_name": "Benton Harbor",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 135,
+    "n_months_obs": 104,
+    "state_abbr": "mi"
+  },
+  {
+    "city_key": "gettysburg__pa",
+    "city_name": "Gettysburg",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 133,
+    "n_months_obs": 101,
+    "state_abbr": "pa"
+  },
+  {
+    "city_key": "ames__ia",
+    "city_name": "Ames",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 123,
+    "n_months_obs": 94,
+    "state_abbr": "ia"
+  },
+  {
+    "city_key": "cumberland__md",
+    "city_name": "Cumberland",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 122,
+    "n_months_obs": 87,
+    "state_abbr": "md"
+  },
+  {
+    "city_key": "janesville__wi",
+    "city_name": "Janesville",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 114,
+    "n_months_obs": 81,
+    "state_abbr": "wi"
+  },
+  {
+    "city_key": "garden_city__ks",
+    "city_name": "Garden City",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 112,
+    "n_months_obs": 103,
+    "state_abbr": "ks"
+  },
+  {
+    "city_key": "kenosha__wi",
+    "city_name": "Kenosha",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 106,
+    "n_months_obs": 82,
+    "state_abbr": "wi"
+  },
+  {
+    "city_key": "nashua__nh",
+    "city_name": "Nashua",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 105,
+    "n_months_obs": 85,
+    "state_abbr": "nh"
+  },
+  {
+    "city_key": "garland__tx",
+    "city_name": "Garland",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 105,
+    "n_months_obs": 67,
+    "state_abbr": "tx"
+  },
+  {
+    "city_key": "colorado_springs__co",
+    "city_name": "Colorado Springs",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 104,
+    "n_months_obs": 70,
+    "state_abbr": "co"
+  },
+  {
+    "city_key": "anderson__in",
+    "city_name": "Anderson",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 102,
+    "n_months_obs": 80,
+    "state_abbr": "in"
+  },
+  {
+    "city_key": "creston__ia",
+    "city_name": "Creston",
+    "has_outcome_overlay": false,
+    "n_issues_sum": 100,
+    "n_months_obs": 76,
+    "state_abbr": "ia"
+  }
+]

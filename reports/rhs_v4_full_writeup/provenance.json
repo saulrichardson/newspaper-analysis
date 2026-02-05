@@ -1,0 +1,13 @@
+{
+  "created_at": "2026-01-30 10:43:10",
+  "dashboards_dir": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/rhs_explore_citytime_STEP_mechanics_v4_plus_embeddings_pca10_20260130_top32_PI/figures",
+  "event_emb_dir": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/rhs_event_candidates_STEP_v4_emb_jump_PI_20260130/figures",
+  "event_mech_dir": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/rhs_event_candidates_STEP_v4_mech_jump_PI_20260130/figures",
+  "issue_topics_report_dir": "/Users/saulrichardson/projects/newspaper-parsing/reports/issue_topics_report",
+  "n_cities": 32,
+  "overlay_emb_dir": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/outcome_overlay_v4_20260130_emb_jump_PI/figures",
+  "overlay_mech_dir": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/outcome_overlay_v4_20260130_mech_jump_PI/figures",
+  "regimes_dir": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/policy_regimes_v4_emb_plus_mech_20260130_top32_PI/figures",
+  "stamp": "20260130_104310",
+  "top32_csv": "/Users/saulrichardson/projects/newspaper-parsing/newspaper-parsing-local/sample_A_top32_v4_20260130/top32_city_state.csv"
+}

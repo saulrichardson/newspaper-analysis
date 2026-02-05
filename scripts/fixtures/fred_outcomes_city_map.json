@@ -1,0 +1,27 @@
+{
+  "madison__wi": {
+    "city_name": "Madison",
+    "state_abbr": "wi",
+    "series": {
+      "fhfa_atnhpi_msa_q": "ATNHPIUS31540Q"
+    },
+    "notes": "FHFA All-Transactions House Price Index for Madison, WI MSA (quarterly)."
+  },
+  "bakersfield__ca": {
+    "city_name": "Bakersfield",
+    "state_abbr": "ca",
+    "series": {
+      "fhfa_atnhpi_msa_q": "ATNHPIUS12540Q"
+    },
+    "notes": "FHFA All-Transactions House Price Index for Bakersfield, CA MSA (quarterly)."
+  },
+  "corpus_christi__tx": {
+    "city_name": "Corpus Christi",
+    "state_abbr": "tx",
+    "series": {
+      "fhfa_atnhpi_msa_q": "ATNHPIUS18580Q"
+    },
+    "notes": "FHFA All-Transactions House Price Index for Corpus Christi, TX MSA (quarterly)."
+  }
+}
+

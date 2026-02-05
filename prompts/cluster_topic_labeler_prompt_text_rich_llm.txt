@@ -1,0 +1,55 @@
+You are analyzing clusters of newspaper text excerpts.
+They may contain zoning / land-use ordinance language, but some clusters may be mixed or entirely non-zoning.
+
+Goal
+- If the cluster is zoning/land-use related: produce a topic label that explains what the zoning text is *doing* (mechanism), not just that it is “zoning”.
+- If the cluster is NOT zoning/land-use related: label the actual topic (do not force it into zoning).
+- Be maximally specific given the evidence in the excerpts, but do not overfit to a single excerpt.
+
+Output format (STRICT)
+Return ONLY valid JSON (no markdown, no code fences) matching:
+{
+  "cluster_id": <integer>,
+  "topic_name": <string>,
+  "topic_description": <string>,
+  "keywords": <array of strings>
+}
+
+How to label (LLM reasoning, no assumptions)
+0) First decide which of these best describes the cluster overall (across the excerpts):
+   - **Zoning/land-use mechanism** (dominant theme is zoning/land-use regulation)
+   - **Ordinance / governance process** (dominant theme is procedural government action, hearings, administration)
+   - **Mixed or non-zoning** (heterogeneous snippets or clearly unrelated to zoning/land-use)
+
+1) If (Zoning/land-use mechanism): identify what kind of regulatory text this is:
+   - **Procedural / action**: rezoning, amendment, adoption, repeal, public hearing notice, appeals/variance, conditional use/special exception, enforcement/penalties.
+   - **Standards / rules**: setbacks/yards, lot size/lot area, height, density/dwelling units, parking/loading, signs/billboards, uses (permitted/conditional/prohibited), mobile homes/trailer parks, subdivision/platting, PUD/site plan rules.
+   - **Structure / administration**: zoning districts and district names, definitions/terms, administration/zoning administrator, board of zoning appeals, nonconforming uses, conformance/transition rules.
+
+2) Write `topic_name` (2–6 words) based on the cluster type:
+   - If (Zoning/land-use mechanism): `topic_name` MUST include at least one concrete mechanism term from the list above (e.g., “setbacks”, “height”, “parking”, “variance”, “conditional use”, “definitions”, “districts”, “nonconforming”, “enforcement”, “public hearing”, “rezoning”, “amendment”). It MAY include “zoning”, but “zoning” alone is not informative.
+   - If (Ordinance / governance process): pick a process label that matches the evidence (e.g., “ordinance adoption process”, “public hearing notice”, “council proceedings”).
+   - If (Mixed or non-zoning): use an honest label like “mixed municipal notices” or the dominant non-zoning topic if there is one (e.g., “wartime bond drives”, “water service extension”).
+
+3) Write `topic_description` as 1–2 plain-language sentences describing the rule/procedure being described.
+   - Prefer “what changes / what is constrained / what is allowed” language.
+   - If there are numeric constraints (feet, sq ft, units/acre), mention them only if clearly present.
+
+4) `keywords` (6–14 items): include concrete mechanism phrases, not generic words.
+   - Good: "minimum lot area", "front-yard setback", "conditional use permit", "board of zoning appeals", "nonconforming use", "height limit", "parking spaces".
+   - Bad: "zoning", "ordinance", "law", "regulation".
+
+Avoid generic labels
+- Do NOT use topic names like “zoning law”, “zoning ordinance”, “zoning regulations”, “land use”, “municipal ordinances”.
+- If the cluster is about zoning, say which mechanism (e.g., “parking requirements”, “sign regulations”, “nonconforming uses”, “zoning definitions & districts”).
+
+When the cluster is mixed
+- If the excerpts are heterogeneous (multiple unrelated topics), prefer a “mixed …” label rather than forcing a single zoning mechanism.
+- If the excerpts are mostly ordinance scaffolding, do NOT say “boilerplate” unless there is no coherent theme across the excerpts.
+  Instead prefer specific structure labels like:
+  - “zoning definitions & terms”
+  - “zoning districts & classifications”
+  - “administration & enforcement”
+  - “nonconforming uses & conformance”
+
+Never mention embeddings, clustering, UMAP, HDBSCAN, OCR, or “model”.

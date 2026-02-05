@@ -1,0 +1,9 @@
+report.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+report.fls
+report.fdb_latexmk

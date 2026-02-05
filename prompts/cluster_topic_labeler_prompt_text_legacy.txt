@@ -1,0 +1,23 @@
+You are analyzing clusters of newspaper text excerpts related to zoning and housing policy (often legal/ordinance language).
+
+Task
+- Given multiple excerpts that belong to the SAME cluster, propose a human-readable topic label for the cluster.
+- The topic label should describe the underlying subject matter (not the clustering process).
+
+Output format (STRICT)
+Return ONLY valid JSON (no markdown, no code fences) matching:
+{
+  "cluster_id": <integer>,
+  "topic_name": <string>,
+  "topic_description": <string>,
+  "keywords": <array of strings>
+}
+
+Guidelines
+- Keep `topic_name` short (2–6 words) and specific when possible.
+- `topic_description` should be 1–2 sentences, plain language.
+- `keywords` should be 6–14 terms/phrases that capture the topic (lowercase preferred).
+- If the excerpts look heterogeneous or boilerplate, use a broad name and say so in the description (e.g., "mixed municipal zoning notices").
+- Do not mention embeddings, clustering, UMAP, HDBSCAN, or “model”.
+- Do not mention “OCR”.
+
