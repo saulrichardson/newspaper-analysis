@@ -12,7 +12,19 @@ do that in the engine repo first, then point these scripts at the resulting arti
 - `scripts/`: clustering, plotting, report builders, RHS construction, etc.
 - `prompts/`: analysis-only prompts (e.g. cluster labeling / instrument labeling)
 - `slurm/`: HPC wrappers for analysis runs
-- `reports/`: example report sources + bundles (recommended: commit sources, ignore build artifacts)
+- `reports/`: report outputs and report templates
+
+## Repository organization framework
+
+The repo uses a strict split between commit-worthy artifacts and local run outputs:
+
+- `reports/hybrid_regulatory_topics_report`, `reports/issue_topics_report`, `reports/rhs_v4_full_writeup`: curated report bundles kept in git.
+- `reports/runs/`: local run artifacts (large/intermediate outputs). Ignored by git except `reports/runs/README.md`.
+- `scratch/`: local one-off experiments and temporary files. Ignored by git except `scratch/README.md`.
+
+Rule of thumb:
+- Commit code, docs, prompts, and curated reports.
+- Do not commit raw batch outputs, temporary run roots, or ad-hoc scratch experiments.
 
 ## Setup (local dev)
 

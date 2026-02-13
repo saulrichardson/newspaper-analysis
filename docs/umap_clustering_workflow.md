@@ -142,8 +142,8 @@ It runs:
 
 ```bash
 python scripts/explore_vlm_text_umap_clusters.py \
-  --pages "newspaper-parsing-local/data/vlm_out_openai_gpt52_reasoning_medium_split_pages_with_ok/*.vlm.json" \
-  --output-dir newspaper-parsing-local/data/umap_explore_pages_smoke \
+  --pages "/path/to/vlm_out/*.vlm.json" \
+  --output-dir "/path/to/umap_explore_pages_smoke" \
   --doc-level page \
   --max-docs 2000 \
   --sample-mode random \
@@ -155,8 +155,8 @@ python scripts/explore_vlm_text_umap_clusters.py \
 
 ```bash
 python scripts/explore_vlm_text_umap_clusters.py \
-  --pages "newspaper-parsing-local/data/vlm_out_openai_gpt52_reasoning_medium_split_pages_with_ok/*.vlm.json" \
-  --output-dir newspaper-parsing-local/data/umap_explore_issues_smoke \
+  --pages "/path/to/vlm_out/*.vlm.json" \
+  --output-dir "/path/to/umap_explore_issues_smoke" \
   --doc-level issue \
   --min-chars 5000
 ```
@@ -176,4 +176,3 @@ The clustering scripts require:
 - `hdbscan`
 
 They’re now listed in `requirements.txt`.
-

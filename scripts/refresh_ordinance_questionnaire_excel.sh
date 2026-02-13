@@ -32,11 +32,17 @@ fi
 
 QUESTIONS_XLSX="${QUESTIONS_XLSX:-${HOME}/Downloads/Questions.xlsx}"
 
-RUN1_REQ_DIR="${RUN1_REQ_DIR:-newspaper-parsing-local/data/batch_requests_ordinance_questionnaire_openai_gpt5nano_reasoning_medium_20251217_025258}"
-RUN1_RES_DIR="${RUN1_RES_DIR:-newspaper-parsing-local/data/batch_results_ordinance_questionnaire_openai_gpt5nano_reasoning_medium_20251217_025258}"
+RUN1_REQ_DIR="${RUN1_REQ_DIR:-}"
+RUN1_RES_DIR="${RUN1_RES_DIR:-}"
+if [[ -z "${RUN1_REQ_DIR}" || -z "${RUN1_RES_DIR}" ]]; then
+  echo "Missing required env vars:" >&2
+  echo "  RUN1_REQ_DIR=/path/to/request_dir" >&2
+  echo "  RUN1_RES_DIR=/path/to/results_dir" >&2
+  exit 1
+fi
 
-RUN2_REQ_DIR="${RUN2_REQ_DIR:-newspaper-parsing-local/data/batch_requests_ordinance_questionnaire_openai_gpt5nano_reasoning_medium_20251217_062159_incremental}"
-RUN2_RES_DIR="${RUN2_RES_DIR:-newspaper-parsing-local/data/batch_results_ordinance_questionnaire_openai_gpt5nano_reasoning_medium_20251217_062159_incremental}"
+RUN2_REQ_DIR="${RUN2_REQ_DIR:-}"
+RUN2_RES_DIR="${RUN2_RES_DIR:-}"
 
 SKIP_RUN2="${SKIP_RUN2:-0}"
 

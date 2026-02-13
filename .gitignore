@@ -15,7 +15,11 @@ venv/
 # Local run artifacts / scratch
 tmp_*/
 tmp_*
-newsvlm-analysis-local/
+scratch/*
+!scratch/README.md
+reports/runs/*
+!reports/runs/README.md
+newspaper-analysis-local/
 
 # LaTeX build artifacts (keep sources like .tex/.bib/.sty, ignore generated files)
 *.aux

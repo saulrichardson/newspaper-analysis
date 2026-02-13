@@ -1,0 +1,22 @@
+# Scripts Layout
+
+Scripts are organized by naming convention so workflows are easy to locate:
+
+- `run_*`: end-to-end pipeline entrypoints.
+- `build_*`: table/figure/model/report builders.
+- `export_*`: request exporters for external/LLM batch jobs.
+- `rehydrate_*`: parsers for returned batch results.
+- `compute_*`, `analyze_*`, `evaluate_*`, `compare_*`: analytic transformations and diagnostics.
+- `plot_*`, `render_*`, `summarize_*`: reporting and visualization utilities.
+
+Recommended workflow:
+
+1. Start with a `run_*` entrypoint when available.
+2. Use `build_*` scripts to materialize specific outputs.
+3. Use `render_*`/`build_*_latex_report.py` for publication-ready writeups.
+
+Conventions:
+
+- All scripts should support `--help`.
+- New scripts should avoid hardcoded local paths; prefer explicit CLI arguments.
+- Large generated outputs should be written to `reports/runs/` (gitignored).

@@ -402,12 +402,12 @@ def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Analyze PCA time series and rank “interesting” entities.")
     ap.add_argument(
         "--pca-xlsx",
-        default="newspaper-parsing-local/data/questionnaire_pca_city_state_page_year.xlsx",
+        required=True,
         help="Path to PCA workbook produced by scripts/compute_questionnaire_pca.py",
     )
     ap.add_argument("--scores-sheet", default="scores")
     ap.add_argument("--meta-sheet", default="group_meta")
-    ap.add_argument("--out-xlsx", default="newspaper-parsing-local/data/questionnaire_pca_timeseries_report.xlsx")
+    ap.add_argument("--out-xlsx", required=True, help="Path to write output workbook.")
     ap.add_argument(
         "--out-tex",
         default="",

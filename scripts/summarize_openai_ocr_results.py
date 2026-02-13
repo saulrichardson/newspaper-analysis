@@ -34,7 +34,7 @@ def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Summarize OpenAI OCR batch results JSONLs.")
     ap.add_argument(
         "--results-root",
-        default="newspaper-parsing-local/data/greene_dedupe_webp_results",
+        required=True,
         help="Root containing part_XXXX directories",
     )
     ap.add_argument(

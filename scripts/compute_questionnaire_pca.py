@@ -299,7 +299,7 @@ def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Compute PCA over questionnaire outputs (with ai-zoning-style imputation).")
     ap.add_argument(
         "--answers-xlsx",
-        default="newspaper-parsing-local/data/questionnaire_answers_all_with_stats.xlsx",
+        required=True,
         help="Path to questionnaire answers workbook (answers_wide sheet).",
     )
     ap.add_argument("--answers-sheet", default="answers_wide", help="Worksheet name in answers workbook.")
@@ -377,7 +377,7 @@ def _parse_args() -> argparse.Namespace:
     ap.add_argument("--n-components", type=int, default=5, help="Number of principal components to compute.")
     ap.add_argument(
         "--out-xlsx",
-        default="newspaper-parsing-local/data/questionnaire_pca.xlsx",
+        required=True,
         help="Path to write output workbook.",
     )
     return ap.parse_args()
