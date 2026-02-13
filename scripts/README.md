@@ -9,6 +9,10 @@ Scripts are organized by naming convention so workflows are easy to locate:
 - `compute_*`, `analyze_*`, `evaluate_*`, `compare_*`: analytic transformations and diagnostics.
 - `plot_*`, `render_*`, `summarize_*`: reporting and visualization utilities.
 
+Notable entrypoints:
+
+- `scripts/extract_zoning_text_from_panels.py`: build zoning-only corpora from full newspaper panel transcripts (rules + optional LLM hybrid).
+
 Recommended workflow:
 
 1. Start with a `run_*` entrypoint when available.
