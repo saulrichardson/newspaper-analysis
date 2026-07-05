@@ -14,7 +14,7 @@ contracts. The no-API smoke path is:
 
 ```bash
 python scripts/pipelines/build_local_retrieval_context.py \
-  --fused-pages ../newspaper-parsing/<run>/outputs/fused_pages \
+  --parser-run-dir ../newspaper-parsing/<run> \
   --query "zoning ordinance apartment height" \
   --output-jsonl artifacts/scratch/evidence_contexts.jsonl \
   --output-format contexts

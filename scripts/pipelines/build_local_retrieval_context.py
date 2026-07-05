@@ -25,6 +25,8 @@ from newsvlm_analysis.local_retrieval import (
 from newsvlm_analysis.evidence import (
     build_evidence_contexts,
     iter_fused_page_documents,
+    iter_parser_run_documents,
+    parser_run_provenance,
     write_evidence_contexts_jsonl,
 )
 
@@ -35,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     source.add_argument("--input-jsonl", type=Path, help="JSONL documents with id/text fields.")
     source.add_argument("--input-dir", type=Path, help="Directory of .txt/.md documents.")
     source.add_argument("--fused-pages", type=Path, help="Parser fused-page JSON file or directory.")
+    source.add_argument("--parser-run-dir", type=Path, help="Parser run bundle with outputs/fused_pages.")
     query = parser.add_mutually_exclusive_group(required=True)
     query.add_argument("--query", help="Single query string.")
     query.add_argument("--queries-jsonl", type=Path, help="JSONL or plain-text query file.")
@@ -64,10 +67,20 @@ def main() -> int:
                 text_field=args.text_field,
             )
         )
+        input_mode = "input_jsonl"
+        source_provenance = {"input_jsonl": str(args.input_jsonl)}
     elif args.input_dir:
         documents = list(iter_text_documents(args.input_dir))
-    else:
+        input_mode = "input_dir"
+        source_provenance = {"input_dir": str(args.input_dir)}
+    elif args.fused_pages:
         documents = list(iter_fused_page_documents(args.fused_pages))
+        input_mode = "fused_pages"
+        source_provenance = {"fused_pages": str(args.fused_pages)}
+    else:
+        documents = list(iter_parser_run_documents(args.parser_run_dir))
+        input_mode = "parser_run"
+        source_provenance = parser_run_provenance(args.parser_run_dir)
 
     queries = [args.query] if args.query else list(read_queries(args.queries_jsonl, query_field=args.query_field))
     if args.output_format == "contexts":
@@ -77,7 +90,7 @@ def main() -> int:
             top_k=args.top_k,
             chunk_words=args.chunk_words,
             overlap_words=args.overlap_words,
-            provenance={"input_mode": "fused_pages" if args.fused_pages else "documents"},
+            provenance={"input_mode": input_mode, **source_provenance},
         )
         written = write_evidence_contexts_jsonl(args.output_jsonl, contexts)
         chunk_count = contexts[0].provenance["chunk_count"] if contexts else 0

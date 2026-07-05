@@ -41,6 +41,23 @@ def _load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
+def parser_run_provenance(run_dir: Path) -> dict[str, Any]:
+    run_dir = run_dir.expanduser().resolve()
+    summary_path = run_dir / "summary.json"
+    provenance_path = run_dir / "provenance.json"
+    summary = _load_json(summary_path) if summary_path.is_file() else {}
+    provenance = _load_json(provenance_path) if provenance_path.is_file() else {}
+    return {
+        "parser_run_dir": str(run_dir),
+        "parser_run_id": str(summary.get("run_id") or run_dir.name),
+        "parser_profile": str(summary.get("profile") or ""),
+        "parser_model_ids": list(summary.get("model_ids") or []),
+        "parser_page_count": int(summary.get("page_count") or 0),
+        "parser_performance": dict(summary.get("performance") or {}),
+        "parser_provenance": provenance,
+    }
+
+
 def iter_fused_page_documents(path: Path) -> Iterator[SourceDocument]:
     """Yield retrieval documents from parser fused-page JSON contracts."""
 
@@ -72,6 +89,23 @@ def iter_fused_page_documents(path: Path) -> Iterator[SourceDocument]:
                 "parser_provenance": provenance,
                 "contract_source": "parser_fused_page",
             },
+        )
+
+
+def iter_parser_run_documents(run_dir: Path) -> Iterator[SourceDocument]:
+    run_dir = run_dir.expanduser().resolve()
+    fused_pages = run_dir / "outputs" / "fused_pages"
+    if not fused_pages.is_dir():
+        raise FileNotFoundError(f"parser run does not contain outputs/fused_pages: {run_dir}")
+    run_metadata = parser_run_provenance(run_dir)
+    for document in iter_fused_page_documents(fused_pages):
+        metadata = dict(document.metadata)
+        metadata.update(run_metadata)
+        metadata["contract_source"] = "parser_run_bundle"
+        yield SourceDocument(
+            doc_id=document.doc_id,
+            text=document.text,
+            metadata=metadata,
         )
 
 
