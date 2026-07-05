@@ -9,6 +9,21 @@ many concurrent LLM requests locally without depending on a separate checkout.
 If you need to make new extraction outputs, do that in the engine repo first, then point these scripts at the resulting
 artifacts.
 
+Forward-looking analysis now starts from parser run bundles and fused page
+contracts. The no-API smoke path is:
+
+```bash
+python scripts/pipelines/build_local_retrieval_context.py \
+  --fused-pages ../newspaper-parsing/<run>/outputs/fused_pages \
+  --query "zoning ordinance apartment height" \
+  --output-jsonl artifacts/scratch/evidence_contexts.jsonl \
+  --output-format contexts
+```
+
+This emits `analysis-evidence-context-v1` JSONL packets with ranked snippets,
+source page IDs, retrieval scores, parser model provenance, and a provenance
+flag showing that no external LLM API was used.
+
 ## What lives here
 
 - `src/newsvlm_analysis/frontier/`: active modular analysis code

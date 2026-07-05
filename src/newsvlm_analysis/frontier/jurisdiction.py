@@ -289,6 +289,7 @@ class JurisdictionResolver:
             use_unit_name_index: bool,
             national: bool,
         ) -> list[dict[str, Any]]:
+            nonlocal state_backfill_used
             entries: list[dict[str, Any]] = []
             seen_candidate_keys: set[str] = set()
             if national:

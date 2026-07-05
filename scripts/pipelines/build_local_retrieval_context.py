@@ -22,6 +22,11 @@ from newsvlm_analysis.local_retrieval import (
     retrieval_hits_to_jsonl_rows,
     write_jsonl,
 )
+from newsvlm_analysis.evidence import (
+    build_evidence_contexts,
+    iter_fused_page_documents,
+    write_evidence_contexts_jsonl,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,6 +34,7 @@ def parse_args() -> argparse.Namespace:
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--input-jsonl", type=Path, help="JSONL documents with id/text fields.")
     source.add_argument("--input-dir", type=Path, help="Directory of .txt/.md documents.")
+    source.add_argument("--fused-pages", type=Path, help="Parser fused-page JSON file or directory.")
     query = parser.add_mutually_exclusive_group(required=True)
     query.add_argument("--query", help="Single query string.")
     query.add_argument("--queries-jsonl", type=Path, help="JSONL or plain-text query file.")
@@ -39,6 +45,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunk-words", type=int, default=220)
     parser.add_argument("--overlap-words", type=int, default=40)
     parser.add_argument("--top-k", type=int, default=10)
+    parser.add_argument(
+        "--output-format",
+        choices=["hits", "contexts"],
+        default="hits",
+        help="Write flat retrieval hits or evidence-context packets.",
+    )
     return parser.parse_args()
 
 
@@ -52,29 +64,45 @@ def main() -> int:
                 text_field=args.text_field,
             )
         )
-    else:
+    elif args.input_dir:
         documents = list(iter_text_documents(args.input_dir))
+    else:
+        documents = list(iter_fused_page_documents(args.fused_pages))
 
-    index = LexicalIndex.from_documents(
-        documents,
-        chunk_words=args.chunk_words,
-        overlap_words=args.overlap_words,
-    )
     queries = [args.query] if args.query else list(read_queries(args.queries_jsonl, query_field=args.query_field))
-    rows = (
-        row
-        for query in queries
-        for row in retrieval_hits_to_jsonl_rows(index.search(query, top_k=args.top_k))
-    )
-    written = write_jsonl(args.output_jsonl, rows)
+    if args.output_format == "contexts":
+        contexts = build_evidence_contexts(
+            documents=documents,
+            queries=queries,
+            top_k=args.top_k,
+            chunk_words=args.chunk_words,
+            overlap_words=args.overlap_words,
+            provenance={"input_mode": "fused_pages" if args.fused_pages else "documents"},
+        )
+        written = write_evidence_contexts_jsonl(args.output_jsonl, contexts)
+        chunk_count = contexts[0].provenance["chunk_count"] if contexts else 0
+    else:
+        index = LexicalIndex.from_documents(
+            documents,
+            chunk_words=args.chunk_words,
+            overlap_words=args.overlap_words,
+        )
+        rows = (
+            row
+            for query in queries
+            for row in retrieval_hits_to_jsonl_rows(index.search(query, top_k=args.top_k))
+        )
+        written = write_jsonl(args.output_jsonl, rows)
+        chunk_count = len(index.chunks)
     print(
         json.dumps(
             {
                 "documents": len(documents),
-                "chunks": len(index.chunks),
+                "chunks": chunk_count,
                 "queries": len(queries),
                 "rows_written": written,
                 "output_jsonl": str(args.output_jsonl),
+                "output_format": args.output_format,
             },
             indent=2,
             sort_keys=True,
