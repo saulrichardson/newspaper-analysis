@@ -27,6 +27,27 @@ input-manifest validation metadata, and a provenance flag showing that no
 external LLM API was used. Parser-run inputs and emitted evidence-context
 packets are validated locally; no API key is required.
 
+Cross-repo contract canary:
+
+```bash
+python scripts/pipelines/run_stack_contract_canary.py \
+  --parser-repo ../newspaper-parsing \
+  --run-root artifacts/scratch/stack_contract_canary
+```
+
+The canary creates a tiny source-artifact manifest, runs `newsbag
+bagging-canary`, validates the parser bundle, builds analysis evidence
+contexts, and writes `stack_summary.json`. It is intended to prove the
+acquisition-style manifest -> parser bundle -> analysis evidence handoff, not
+to run a production corpus.
+
+Torch stack canary:
+
+```bash
+bash scripts/pipelines/submit_torch_stack_contract_canary.sh \
+  --parser-repo ../newspaper-parsing
+```
+
 ## What lives here
 
 - `src/newsvlm_analysis/frontier/`: active modular analysis code
