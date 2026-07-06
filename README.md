@@ -22,9 +22,10 @@ python scripts/pipelines/build_local_retrieval_context.py \
 ```
 
 This emits `analysis-evidence-context-v1` JSONL packets with ranked snippets,
-source page IDs, retrieval scores, parser model provenance, and a provenance
-flag showing that no external LLM API was used. Parser-run inputs and emitted
-evidence-context packets are validated locally; no API key is required.
+source page IDs, retrieval scores, parser model provenance, parser
+input-manifest validation metadata, and a provenance flag showing that no
+external LLM API was used. Parser-run inputs and emitted evidence-context
+packets are validated locally; no API key is required.
 
 ## What lives here
 

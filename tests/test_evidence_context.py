@@ -59,6 +59,19 @@ def _write_parser_run(run_dir: Path) -> None:
         json.dumps({"status": "ok", "counts": {"errors": 0, "warnings": 0}, "issues": []}) + "\n",
         encoding="utf-8",
     )
+    (run_dir / "reports" / "input_manifest_validation.json").write_text(
+        json.dumps(
+            {
+                "contract": "parse-input-manifest-validation-v1",
+                "status": "ok",
+                "counts": {"rows": 1, "errors": 0, "warnings": 0},
+                "manifest_path": "/tmp/source_artifacts.jsonl",
+                "issues": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def test_fused_page_documents_build_evidence_context(tmp_path: Path) -> None:
@@ -114,6 +127,7 @@ def test_parser_run_documents_include_run_bundle_provenance(tmp_path: Path) -> N
     assert documents[0].metadata["contract_source"] == "parser_run_bundle"
     assert documents[0].metadata["parser_run_id"] == "parser-run-001"
     assert documents[0].metadata["parser_provenance"]["repo_commit"] == "abc123"
+    assert documents[0].metadata["parser_input_manifest_validation"]["status"] == "ok"
 
 
 def test_local_retrieval_script_accepts_fused_pages(tmp_path: Path) -> None:
@@ -191,6 +205,7 @@ def test_local_retrieval_script_accepts_parser_run_dir(tmp_path: Path) -> None:
     assert row["provenance"]["input_mode"] == "parser_run"
     assert row["provenance"]["parser_run_id"] == "parser-run-001"
     assert row["provenance"]["parser_validation"]["status"] == "warning"
+    assert row["provenance"]["parser_input_manifest_validation"]["status"] == "ok"
 
 
 def test_local_retrieval_script_writes_validation_sidecar(tmp_path: Path) -> None:
@@ -229,4 +244,5 @@ def test_local_retrieval_script_writes_validation_sidecar(tmp_path: Path) -> Non
     assert result.returncode == 0, result.stderr
     report = json.loads(validation.read_text(encoding="utf-8"))
     assert report["parser_run"]["status"] == "warning"
+    assert report["parser_run"]["counts"]["input_manifest_rows"] == 1
     assert report["evidence_contexts"]["status"] == "ok"

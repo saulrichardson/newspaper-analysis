@@ -50,8 +50,14 @@ def parser_run_provenance(
     run_dir = run_dir.expanduser().resolve()
     summary_path = run_dir / "summary.json"
     provenance_path = run_dir / "provenance.json"
+    input_manifest_validation_path = run_dir / "reports" / "input_manifest_validation.json"
     summary = _load_json(summary_path) if summary_path.is_file() else {}
     provenance = _load_json(provenance_path) if provenance_path.is_file() else {}
+    input_manifest_validation = (
+        _load_json(input_manifest_validation_path)
+        if input_manifest_validation_path.is_file()
+        else {}
+    )
     out = {
         "parser_run_dir": str(run_dir),
         "parser_run_id": str(summary.get("run_id") or run_dir.name),
@@ -67,6 +73,13 @@ def parser_run_provenance(
             "counts": dict(validation_report.get("counts") or {}),
             "issues": list(validation_report.get("issues") or []),
             "contract": validation_report.get("contract"),
+        }
+    if input_manifest_validation:
+        out["parser_input_manifest_validation"] = {
+            "status": input_manifest_validation.get("status"),
+            "counts": dict(input_manifest_validation.get("counts") or {}),
+            "contract": input_manifest_validation.get("contract"),
+            "manifest_path": input_manifest_validation.get("manifest_path"),
         }
     return out
 

@@ -56,6 +56,19 @@ def _write_parser_run(run_dir: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
+    (run_dir / "reports" / "input_manifest_validation.json").write_text(
+        json.dumps(
+            {
+                "contract": "parse-input-manifest-validation-v1",
+                "status": "ok",
+                "counts": {"rows": 1, "errors": 0, "warnings": 0},
+                "issues": [],
+                "manifest_path": "/tmp/source_artifacts.jsonl",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def test_validate_parser_run_bundle_accepts_analysis_surface(tmp_path: Path) -> None:
@@ -82,6 +95,20 @@ def test_validate_parser_run_bundle_rejects_bad_parser_validation(tmp_path: Path
 
     assert report["status"] == "error"
     assert any(issue["code"] == "parser_validation_not_ok" for issue in report["issues"])
+
+
+def test_validate_parser_run_bundle_rejects_bad_input_manifest_validation(tmp_path: Path) -> None:
+    run_dir = tmp_path / "parser-run"
+    _write_parser_run(run_dir)
+    (run_dir / "reports" / "input_manifest_validation.json").write_text(
+        json.dumps({"status": "error", "counts": {"rows": 1, "errors": 1}, "issues": [{"code": "bad"}]}) + "\n",
+        encoding="utf-8",
+    )
+
+    report = validate_parser_run_bundle(run_dir, require_validation_report=True)
+
+    assert report["status"] == "error"
+    assert any(issue["code"] == "input_manifest_validation_not_ok" for issue in report["issues"])
 
 
 def test_validate_evidence_contexts_jsonl_accepts_contexts(tmp_path: Path) -> None:

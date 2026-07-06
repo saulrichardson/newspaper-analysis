@@ -116,6 +116,16 @@ JSON
   "issues": []
 }
 JSON
+  cat > "$PARSER_RUN_DIR/reports/input_manifest_validation.json" <<'JSON'
+{
+  "contract": "parse-input-manifest-validation-v1",
+  "status": "ok",
+  "manifest_path": "torch-fixture-source-artifacts.jsonl",
+  "counts": {"rows": 1, "unique_page_ids": 1, "rows_with_files": 1, "rows_with_checksums": 0, "source_systems": 1, "errors": 0, "warnings": 0},
+  "source_systems": ["torch_fixture"],
+  "issues": []
+}
+JSON
 fi
 
 if [ -f "$PARSER_RUN_DIR/outputs/fused_pages/torch-page-001.json" ]; then
@@ -131,6 +141,18 @@ TXT
   "contract": "parser-run-bundle-validation-v1",
   "status": "ok",
   "counts": {"errors": 0, "warnings": 0},
+  "issues": []
+}
+JSON
+  fi
+  if [ ! -f "$PARSER_RUN_DIR/reports/input_manifest_validation.json" ]; then
+    cat > "$PARSER_RUN_DIR/reports/input_manifest_validation.json" <<'JSON'
+{
+  "contract": "parse-input-manifest-validation-v1",
+  "status": "ok",
+  "manifest_path": "torch-fixture-source-artifacts.jsonl",
+  "counts": {"rows": 1, "unique_page_ids": 1, "rows_with_files": 1, "rows_with_checksums": 0, "source_systems": 1, "errors": 0, "warnings": 0},
+  "source_systems": ["torch_fixture"],
   "issues": []
 }
 JSON

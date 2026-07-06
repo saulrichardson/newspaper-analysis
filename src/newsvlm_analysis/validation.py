@@ -59,6 +59,13 @@ def _counts(issues: list[dict[str, Any]]) -> dict[str, int]:
     }
 
 
+def _int_count(payload: dict[str, Any], key: str) -> int:
+    try:
+        return int(payload.get(key) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def validate_parser_run_bundle(
     run_dir: Path,
     *,
@@ -78,6 +85,11 @@ def validate_parser_run_bundle(
     summary = _read_json(root / "summary.json", issues)
     provenance = _read_json(root / "provenance.json", issues, required=False)
     parser_validation = _read_json(root / "reports" / "validation.json", issues, required=False)
+    input_manifest_validation = _read_json(
+        root / "reports" / "input_manifest_validation.json",
+        issues,
+        required=False,
+    )
 
     if not isinstance(summary, dict):
         summary = {}
@@ -117,6 +129,35 @@ def validate_parser_run_bundle(
                 code="parser_validation_not_ok",
                 message=f"parser validation status is {parser_status or 'missing'}",
                 path=root / "reports" / "validation.json",
+            )
+
+    if input_manifest_validation is None:
+        if require_validation_report:
+            _issue(
+                issues,
+                level="warning",
+                code="missing_input_manifest_validation_report",
+                message="parser input-manifest validation report is missing",
+                path=root / "reports" / "input_manifest_validation.json",
+            )
+    elif not isinstance(input_manifest_validation, dict):
+        _issue(
+            issues,
+            level="error",
+            code="invalid_input_manifest_validation_report",
+            message="parser input-manifest validation report must contain a JSON object",
+            path=root / "reports" / "input_manifest_validation.json",
+        )
+        input_manifest_validation = {}
+    else:
+        input_manifest_status = str(input_manifest_validation.get("status") or "")
+        if input_manifest_status not in ("ok", "warning"):
+            _issue(
+                issues,
+                level="error",
+                code="input_manifest_validation_not_ok",
+                message=f"parser input-manifest validation status is {input_manifest_status or 'missing'}",
+                path=root / "reports" / "input_manifest_validation.json",
             )
 
     fused_dir = root / "outputs" / "fused_pages"
@@ -204,12 +245,20 @@ def validate_parser_run_bundle(
             path=fused_dir,
         )
 
+    input_manifest_counts = (
+        input_manifest_validation.get("counts")
+        if isinstance(input_manifest_validation, dict) and isinstance(input_manifest_validation.get("counts"), dict)
+        else {}
+    )
     counts = {
         **_counts(issues),
         "fused_pages": len(fused_paths),
         "nonempty_fused_pages": nonempty_fused_pages,
         "transcript_files": len(transcript_files),
         "parser_models": len(summary_model_ids or model_ids),
+        "input_manifest_rows": _int_count(input_manifest_counts, "rows"),
+        "input_manifest_errors": _int_count(input_manifest_counts, "errors"),
+        "input_manifest_warnings": _int_count(input_manifest_counts, "warnings"),
     }
     return {
         "contract": "analysis-parser-run-validation-v1",
@@ -217,6 +266,9 @@ def validate_parser_run_bundle(
         "run_dir": str(root),
         "counts": counts,
         "parser_validation_report": str(root / "reports" / "validation.json") if parser_validation else "",
+        "input_manifest_validation_report": (
+            str(root / "reports" / "input_manifest_validation.json") if input_manifest_validation else ""
+        ),
         "issues": issues,
     }
 
