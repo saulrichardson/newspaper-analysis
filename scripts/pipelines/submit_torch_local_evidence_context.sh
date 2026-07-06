@@ -99,7 +99,7 @@ fi
 
 PROJECT_ROOT="$REMOTE_BASE/newspaper-analysis"
 RUN_DIR="$REMOTE_BASE/runs/evidence_context_$(date -u +%Y%m%d_%H%M%S)"
-FUSED_PAGES="$REMOTE_BASE/fixtures/fused_pages"
+PARSER_RUN_DIR="$REMOTE_BASE/fixtures/parser_run"
 SCRIPT="slurm/pipelines/local_evidence_context_cs.sbatch"
 
 echo "[plan] remote=$REMOTE"
@@ -107,6 +107,7 @@ echo "[plan] remote_user=$REMOTE_USER"
 echo "[plan] remote_base=$REMOTE_BASE"
 echo "[plan] project_root=$PROJECT_ROOT"
 echo "[plan] run_dir=$RUN_DIR"
+echo "[plan] parser_run_dir=$PARSER_RUN_DIR"
 echo "[plan] query=$QUERY"
 
 if [[ "$PLAN_ONLY" -eq 1 ]]; then
@@ -138,7 +139,7 @@ ssh "$REMOTE" "cd '$PROJECT_ROOT' && sbatch --test-only -A '$ACCOUNT' -p '$PARTI
 
 JOB_ID="$(
   ssh "$REMOTE" "cd '$PROJECT_ROOT' && sbatch --parsable -A '$ACCOUNT' -p '$PARTITION' \
-    --export=ALL,BASE='$REMOTE_BASE',PROJECT_ROOT='$PROJECT_ROOT',RUN_DIR='$RUN_DIR',FUSED_PAGES='$FUSED_PAGES',QUERY='$QUERY' \
+    --export=ALL,BASE='$REMOTE_BASE',PROJECT_ROOT='$PROJECT_ROOT',RUN_DIR='$RUN_DIR',PARSER_RUN_DIR='$PARSER_RUN_DIR',QUERY='$QUERY' \
     '$SCRIPT'"
 )"
 

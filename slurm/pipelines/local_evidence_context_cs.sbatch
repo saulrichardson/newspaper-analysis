@@ -15,7 +15,7 @@ set -euo pipefail
 BASE="${BASE:-/scratch/$USER/codex_hpc/newspaper_analysis}"
 PROJECT_ROOT="${PROJECT_ROOT:-$BASE/newspaper-analysis}"
 RUN_DIR="${RUN_DIR:-$BASE/runs/evidence_context_${SLURM_JOB_ID:-manual}}"
-FUSED_PAGES="${FUSED_PAGES:-$BASE/fixtures/fused_pages}"
+PARSER_RUN_DIR="${PARSER_RUN_DIR:-$BASE/fixtures/parser_run}"
 QUERY="${QUERY:-zoning ordinance apartment height}"
 VENV_DIR="${VENV_DIR:-$BASE/envs/analysis_py312}"
 BOOTSTRAP_PY="${BOOTSTRAP_PY:-}"
@@ -29,7 +29,7 @@ echo "[analysis-evidence] host=$(hostname)"
 echo "[analysis-evidence] date=$(date -Is)"
 echo "[analysis-evidence] project_root=$PROJECT_ROOT"
 echo "[analysis-evidence] run_dir=$RUN_DIR"
-echo "[analysis-evidence] fused_pages=$FUSED_PAGES"
+echo "[analysis-evidence] parser_run_dir=$PARSER_RUN_DIR"
 
 if [ ! -d "$PROJECT_ROOT/src/newsvlm_analysis" ]; then
   echo "[analysis-evidence] ERROR: PROJECT_ROOT does not look like newspaper-analysis: $PROJECT_ROOT" >&2
@@ -78,10 +78,10 @@ fi
 "$ANALYSIS_PY" -m pip install --upgrade pip >/dev/null
 "$ANALYSIS_PY" -m pip install -e "$PROJECT_ROOT" >/dev/null
 
-if ! find "$FUSED_PAGES" -maxdepth 1 -name '*.json' -type f 2>/dev/null | grep -q .; then
-  echo "[analysis-evidence] creating fixture fused page"
-  mkdir -p "$FUSED_PAGES"
-  cat > "$FUSED_PAGES/torch-page-001.json" <<'JSON'
+if ! find "$PARSER_RUN_DIR/outputs/fused_pages" -maxdepth 1 -name '*.json' -type f 2>/dev/null | grep -q .; then
+  echo "[analysis-evidence] creating fixture parser run bundle"
+  mkdir -p "$PARSER_RUN_DIR/outputs/fused_pages"
+  cat > "$PARSER_RUN_DIR/outputs/fused_pages/torch-page-001.json" <<'JSON'
 {
   "page_id": "torch-page-001",
   "model_ids": ["baseline_geometry_v1", "column_detector_v1"],
@@ -90,12 +90,27 @@ if ! find "$FUSED_PAGES" -maxdepth 1 -name '*.json' -type f 2>/dev/null | grep -
   "provenance": {"contract_source": "torch_fixture"}
 }
 JSON
+  cat > "$PARSER_RUN_DIR/summary.json" <<'JSON'
+{
+  "run_id": "torch-parser-fixture",
+  "profile": "full",
+  "page_count": 1,
+  "model_ids": ["baseline_geometry_v1", "column_detector_v1"],
+  "performance": {"pages_completed": 1, "errors": 0}
+}
+JSON
+  cat > "$PARSER_RUN_DIR/provenance.json" <<'JSON'
+{
+  "contract_version": "parser-bagging-v1",
+  "repo_commit": "torch-fixture"
+}
+JSON
 fi
 
 cd "$PROJECT_ROOT"
 OUTPUT_JSONL="$RUN_DIR/evidence_contexts.jsonl"
 "$ANALYSIS_PY" scripts/pipelines/build_local_retrieval_context.py \
-  --fused-pages "$FUSED_PAGES" \
+  --parser-run-dir "$PARSER_RUN_DIR" \
   --query "$QUERY" \
   --output-jsonl "$OUTPUT_JSONL" \
   --output-format contexts \
@@ -122,6 +137,7 @@ status = {
     "run_dir": str(run_dir),
     "summary": summary,
     "evidence_contexts_jsonl": str(run_dir / "evidence_contexts.jsonl"),
+    "parser_run_dir": "$PARSER_RUN_DIR",
     "uses_external_llm_api": False,
 }
 (run_dir / "slurm_status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
