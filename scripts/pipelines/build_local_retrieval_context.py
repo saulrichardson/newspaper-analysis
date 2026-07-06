@@ -29,6 +29,10 @@ from newsvlm_analysis.evidence import (
     parser_run_provenance,
     write_evidence_contexts_jsonl,
 )
+from newsvlm_analysis.validation import (
+    validate_evidence_contexts_jsonl,
+    validate_parser_run_bundle,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,6 +53,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--overlap-words", type=int, default=40)
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument(
+        "--skip-parser-validation",
+        action="store_true",
+        help="Do not validate --parser-run-dir before building contexts.",
+    )
+    parser.add_argument(
+        "--require-parser-validation-report",
+        action="store_true",
+        help="Require --parser-run-dir/reports/validation.json and require its status to be ok.",
+    )
+    parser.add_argument(
+        "--strict-validation",
+        action="store_true",
+        help="Treat validation warnings as errors.",
+    )
+    parser.add_argument(
+        "--validation-json",
+        type=Path,
+        default=None,
+        help="Optional path to write parser/evidence validation reports.",
+    )
+    parser.add_argument(
         "--output-format",
         choices=["hits", "contexts"],
         default="hits",
@@ -59,6 +84,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    validation_reports: dict[str, object] = {}
     if args.input_jsonl:
         documents = list(
             iter_jsonl_documents(
@@ -78,9 +104,26 @@ def main() -> int:
         input_mode = "fused_pages"
         source_provenance = {"fused_pages": str(args.fused_pages)}
     else:
-        documents = list(iter_parser_run_documents(args.parser_run_dir))
+        parser_validation = None
+        if not args.skip_parser_validation:
+            parser_validation = validate_parser_run_bundle(
+                args.parser_run_dir,
+                require_validation_report=bool(args.require_parser_validation_report),
+                warnings_are_errors=bool(args.strict_validation),
+            )
+            validation_reports["parser_run"] = parser_validation
+            if parser_validation["status"] == "error":
+                print(
+                    json.dumps(
+                        {"error": "parser_run_validation_failed", "validation": parser_validation},
+                        indent=2,
+                    ),
+                    file=sys.stderr,
+                )
+                return 1
+        documents = list(iter_parser_run_documents(args.parser_run_dir, validation_report=parser_validation))
         input_mode = "parser_run"
-        source_provenance = parser_run_provenance(args.parser_run_dir)
+        source_provenance = parser_run_provenance(args.parser_run_dir, validation_report=parser_validation)
 
     queries = [args.query] if args.query else list(read_queries(args.queries_jsonl, query_field=args.query_field))
     if args.output_format == "contexts":
@@ -94,6 +137,21 @@ def main() -> int:
         )
         written = write_evidence_contexts_jsonl(args.output_jsonl, contexts)
         chunk_count = contexts[0].provenance["chunk_count"] if contexts else 0
+        evidence_validation = validate_evidence_contexts_jsonl(
+            args.output_jsonl,
+            require_evidence=True,
+            warnings_are_errors=bool(args.strict_validation),
+        )
+        validation_reports["evidence_contexts"] = evidence_validation
+        if evidence_validation["status"] == "error":
+            print(
+                json.dumps(
+                    {"error": "evidence_context_validation_failed", "validation": evidence_validation},
+                    indent=2,
+                ),
+                file=sys.stderr,
+            )
+            return 1
     else:
         index = LexicalIndex.from_documents(
             documents,
@@ -107,6 +165,12 @@ def main() -> int:
         )
         written = write_jsonl(args.output_jsonl, rows)
         chunk_count = len(index.chunks)
+    if args.validation_json:
+        args.validation_json.parent.mkdir(parents=True, exist_ok=True)
+        args.validation_json.write_text(
+            json.dumps(validation_reports, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     print(
         json.dumps(
             {
@@ -116,6 +180,7 @@ def main() -> int:
                 "rows_written": written,
                 "output_jsonl": str(args.output_jsonl),
                 "output_format": args.output_format,
+                "validation": validation_reports,
             },
             indent=2,
             sort_keys=True,

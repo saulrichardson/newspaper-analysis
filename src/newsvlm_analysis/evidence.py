@@ -12,6 +12,7 @@ from newsvlm_analysis.local_retrieval import (
     RetrievalHit,
     SourceDocument,
 )
+from newsvlm_analysis.validation import validate_parser_run_bundle
 
 
 @dataclass(frozen=True)
@@ -41,13 +42,17 @@ def _load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def parser_run_provenance(run_dir: Path) -> dict[str, Any]:
+def parser_run_provenance(
+    run_dir: Path,
+    *,
+    validation_report: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     run_dir = run_dir.expanduser().resolve()
     summary_path = run_dir / "summary.json"
     provenance_path = run_dir / "provenance.json"
     summary = _load_json(summary_path) if summary_path.is_file() else {}
     provenance = _load_json(provenance_path) if provenance_path.is_file() else {}
-    return {
+    out = {
         "parser_run_dir": str(run_dir),
         "parser_run_id": str(summary.get("run_id") or run_dir.name),
         "parser_profile": str(summary.get("profile") or ""),
@@ -56,6 +61,14 @@ def parser_run_provenance(run_dir: Path) -> dict[str, Any]:
         "parser_performance": dict(summary.get("performance") or {}),
         "parser_provenance": provenance,
     }
+    if validation_report is not None:
+        out["parser_validation"] = {
+            "status": validation_report.get("status"),
+            "counts": dict(validation_report.get("counts") or {}),
+            "issues": list(validation_report.get("issues") or []),
+            "contract": validation_report.get("contract"),
+        }
+    return out
 
 
 def iter_fused_page_documents(path: Path) -> Iterator[SourceDocument]:
@@ -92,12 +105,16 @@ def iter_fused_page_documents(path: Path) -> Iterator[SourceDocument]:
         )
 
 
-def iter_parser_run_documents(run_dir: Path) -> Iterator[SourceDocument]:
+def iter_parser_run_documents(
+    run_dir: Path,
+    *,
+    validation_report: dict[str, Any] | None = None,
+) -> Iterator[SourceDocument]:
     run_dir = run_dir.expanduser().resolve()
     fused_pages = run_dir / "outputs" / "fused_pages"
     if not fused_pages.is_dir():
         raise FileNotFoundError(f"parser run does not contain outputs/fused_pages: {run_dir}")
-    run_metadata = parser_run_provenance(run_dir)
+    run_metadata = parser_run_provenance(run_dir, validation_report=validation_report)
     for document in iter_fused_page_documents(fused_pages):
         metadata = dict(document.metadata)
         metadata.update(run_metadata)
@@ -107,6 +124,19 @@ def iter_parser_run_documents(run_dir: Path) -> Iterator[SourceDocument]:
             text=document.text,
             metadata=metadata,
         )
+
+
+def validate_parser_run_for_analysis(
+    run_dir: Path,
+    *,
+    require_validation_report: bool = False,
+    warnings_are_errors: bool = False,
+) -> dict[str, Any]:
+    return validate_parser_run_bundle(
+        run_dir,
+        require_validation_report=require_validation_report,
+        warnings_are_errors=warnings_are_errors,
+    )
 
 
 def evidence_item_from_hit(hit: RetrievalHit) -> EvidenceItem:

@@ -53,6 +53,12 @@ def _write_parser_run(run_dir: Path) -> None:
         json.dumps({"repo_commit": "abc123", "contract_version": "parser-bagging-v1"}) + "\n",
         encoding="utf-8",
     )
+    validation_path = run_dir / "reports" / "validation.json"
+    validation_path.parent.mkdir(parents=True, exist_ok=True)
+    validation_path.write_text(
+        json.dumps({"status": "ok", "counts": {"errors": 0, "warnings": 0}, "issues": []}) + "\n",
+        encoding="utf-8",
+    )
 
 
 def test_fused_page_documents_build_evidence_context(tmp_path: Path) -> None:
@@ -184,3 +190,43 @@ def test_local_retrieval_script_accepts_parser_run_dir(tmp_path: Path) -> None:
     row = json.loads(output.read_text(encoding="utf-8"))
     assert row["provenance"]["input_mode"] == "parser_run"
     assert row["provenance"]["parser_run_id"] == "parser-run-001"
+    assert row["provenance"]["parser_validation"]["status"] == "warning"
+
+
+def test_local_retrieval_script_writes_validation_sidecar(tmp_path: Path) -> None:
+    run_dir = tmp_path / "parser-run"
+    _write_parser_run(run_dir)
+    output = tmp_path / "contexts.jsonl"
+    validation = tmp_path / "validation.json"
+    script = Path("scripts/pipelines/build_local_retrieval_context.py")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--parser-run-dir",
+            str(run_dir),
+            "--query",
+            "zoning ordinance apartment",
+            "--output-jsonl",
+            str(output),
+            "--output-format",
+            "contexts",
+            "--validation-json",
+            str(validation),
+            "--top-k",
+            "1",
+            "--chunk-words",
+            "40",
+            "--overlap-words",
+            "0",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    report = json.loads(validation.read_text(encoding="utf-8"))
+    assert report["parser_run"]["status"] == "warning"
+    assert report["evidence_contexts"]["status"] == "ok"

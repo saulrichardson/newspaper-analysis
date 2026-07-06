@@ -17,12 +17,14 @@ python scripts/pipelines/build_local_retrieval_context.py \
   --parser-run-dir ../newspaper-parsing/<run> \
   --query "zoning ordinance apartment height" \
   --output-jsonl artifacts/scratch/evidence_contexts.jsonl \
-  --output-format contexts
+  --output-format contexts \
+  --validation-json artifacts/scratch/evidence_contexts.validation.json
 ```
 
 This emits `analysis-evidence-context-v1` JSONL packets with ranked snippets,
 source page IDs, retrieval scores, parser model provenance, and a provenance
-flag showing that no external LLM API was used.
+flag showing that no external LLM API was used. Parser-run inputs and emitted
+evidence-context packets are validated locally; no API key is required.
 
 ## What lives here
 

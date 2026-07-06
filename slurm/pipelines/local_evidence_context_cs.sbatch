@@ -80,7 +80,7 @@ fi
 
 if ! find "$PARSER_RUN_DIR/outputs/fused_pages" -maxdepth 1 -name '*.json' -type f 2>/dev/null | grep -q .; then
   echo "[analysis-evidence] creating fixture parser run bundle"
-  mkdir -p "$PARSER_RUN_DIR/outputs/fused_pages"
+  mkdir -p "$PARSER_RUN_DIR/outputs/fused_pages" "$PARSER_RUN_DIR/outputs/transcripts" "$PARSER_RUN_DIR/reports"
   cat > "$PARSER_RUN_DIR/outputs/fused_pages/torch-page-001.json" <<'JSON'
 {
   "page_id": "torch-page-001",
@@ -90,6 +90,9 @@ if ! find "$PARSER_RUN_DIR/outputs/fused_pages" -maxdepth 1 -name '*.json' -type
   "provenance": {"contract_source": "torch_fixture"}
 }
 JSON
+  cat > "$PARSER_RUN_DIR/outputs/transcripts/torch-page-001.txt" <<'TXT'
+The city council debated a zoning ordinance that limited apartment height near the railroad station.
+TXT
   cat > "$PARSER_RUN_DIR/summary.json" <<'JSON'
 {
   "run_id": "torch-parser-fixture",
@@ -105,6 +108,33 @@ JSON
   "repo_commit": "torch-fixture"
 }
 JSON
+  cat > "$PARSER_RUN_DIR/reports/validation.json" <<'JSON'
+{
+  "contract": "parser-run-bundle-validation-v1",
+  "status": "ok",
+  "counts": {"errors": 0, "warnings": 0},
+  "issues": []
+}
+JSON
+fi
+
+if [ -f "$PARSER_RUN_DIR/outputs/fused_pages/torch-page-001.json" ]; then
+  mkdir -p "$PARSER_RUN_DIR/outputs/transcripts" "$PARSER_RUN_DIR/reports"
+  if [ ! -f "$PARSER_RUN_DIR/outputs/transcripts/torch-page-001.txt" ]; then
+    cat > "$PARSER_RUN_DIR/outputs/transcripts/torch-page-001.txt" <<'TXT'
+The city council debated a zoning ordinance that limited apartment height near the railroad station.
+TXT
+  fi
+  if [ ! -f "$PARSER_RUN_DIR/reports/validation.json" ]; then
+    cat > "$PARSER_RUN_DIR/reports/validation.json" <<'JSON'
+{
+  "contract": "parser-run-bundle-validation-v1",
+  "status": "ok",
+  "counts": {"errors": 0, "warnings": 0},
+  "issues": []
+}
+JSON
+  fi
 fi
 
 cd "$PROJECT_ROOT"
@@ -117,6 +147,7 @@ OUTPUT_JSONL="$RUN_DIR/evidence_contexts.jsonl"
   --top-k 3 \
   --chunk-words 80 \
   --overlap-words 0 \
+  --validation-json "$RUN_DIR/validation.json" \
   > "$RUN_DIR/summary.json"
 
 "$ANALYSIS_PY" - <<PY
@@ -127,15 +158,18 @@ from pathlib import Path
 
 run_dir = Path("$RUN_DIR")
 summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+validation = json.loads((run_dir / "validation.json").read_text(encoding="utf-8"))
 rows = [
     json.loads(line)
     for line in (run_dir / "evidence_contexts.jsonl").read_text(encoding="utf-8").splitlines()
     if line.strip()
 ]
 status = {
-    "status": "ok" if rows and rows[0].get("evidence_count", 0) > 0 else "error",
+    "status": "ok" if rows and rows[0].get("evidence_count", 0) > 0 and validation.get("evidence_contexts", {}).get("status") == "ok" else "error",
     "run_dir": str(run_dir),
     "summary": summary,
+    "validation": validation,
+    "validation_json": str(run_dir / "validation.json"),
     "evidence_contexts_jsonl": str(run_dir / "evidence_contexts.jsonl"),
     "parser_run_dir": "$PARSER_RUN_DIR",
     "uses_external_llm_api": False,
