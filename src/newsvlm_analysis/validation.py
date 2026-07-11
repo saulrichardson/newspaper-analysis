@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 from typing import Any
 
@@ -416,5 +417,231 @@ def validate_evidence_contexts_jsonl(
         "output_jsonl": str(output),
         "counts": counts,
         "contract_versions": sorted(version for version in contract_versions if version),
+        "issues": issues,
+    }
+
+
+def _count_jsonl_rows(path: Path, issues: list[dict[str, Any]]) -> int:
+    if not path.is_file():
+        _issue(issues, level="error", code="missing_file", message="required JSONL file is missing", path=path)
+        return 0
+    rows = 0
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            payload = json.loads(stripped)
+        except json.JSONDecodeError as exc:
+            _issue(
+                issues,
+                level="error",
+                code="invalid_jsonl",
+                message=f"invalid JSONL row: {exc.msg}",
+                path=path,
+                line=line_number,
+            )
+            continue
+        if not isinstance(payload, dict):
+            _issue(
+                issues,
+                level="error",
+                code="invalid_jsonl_row",
+                message="JSONL row must be an object",
+                path=path,
+                line=line_number,
+            )
+            continue
+        rows += 1
+    return rows
+
+
+def validate_analysis_run_bundle(
+    run_dir: Path,
+    *,
+    warnings_are_errors: bool = False,
+) -> dict[str, Any]:
+    """Validate the canonical persistent offline analysis run contract."""
+
+    from newsvlm_analysis.persistent_index import inspect_persistent_index
+
+    root = run_dir.expanduser().resolve()
+    issues: list[dict[str, Any]] = []
+    summary = _read_json(root / "summary.json", issues)
+    config = _read_json(root / "config.json", issues)
+    provenance = _read_json(root / "provenance.json", issues)
+    parser_validation = _read_json(root / "reports" / "parser_validation.json", issues)
+    performance = _read_json(root / "reports" / "performance.json", issues)
+    evaluation = _read_json(root / "reports" / "retrieval_evaluation.json", issues)
+
+    objects = {
+        "summary": summary,
+        "config": config,
+        "provenance": provenance,
+        "parser_validation": parser_validation,
+        "performance": performance,
+        "evaluation": evaluation,
+    }
+    for name, payload in objects.items():
+        if payload is not None and not isinstance(payload, dict):
+            _issue(
+                issues,
+                level="error",
+                code=f"invalid_{name}",
+                message=f"{name} must contain a JSON object",
+            )
+    summary = summary if isinstance(summary, dict) else {}
+    config = config if isinstance(config, dict) else {}
+    provenance = provenance if isinstance(provenance, dict) else {}
+    parser_validation = parser_validation if isinstance(parser_validation, dict) else {}
+    performance = performance if isinstance(performance, dict) else {}
+
+    if summary.get("contract_version") != "offline-analysis-run-v1":
+        _issue(
+            issues,
+            level="error",
+            code="invalid_run_contract",
+            message="summary contract_version must be offline-analysis-run-v1",
+            path=root / "summary.json",
+        )
+    if summary.get("status") not in ("ok", None):
+        _issue(
+            issues,
+            level="error",
+            code="run_status_not_ok",
+            message=f"analysis run status is {summary.get('status')}",
+            path=root / "summary.json",
+        )
+    for name, payload, path in (
+        ("config", config, root / "config.json"),
+        ("provenance", provenance, root / "provenance.json"),
+        ("summary", summary, root / "summary.json"),
+    ):
+        if payload.get("uses_external_llm_api") is not False:
+            _issue(
+                issues,
+                level="error",
+                code="external_llm_api_not_false",
+                message=f"{name} must explicitly set uses_external_llm_api=false",
+                path=path,
+            )
+    if parser_validation.get("status") == "error":
+        _issue(
+            issues,
+            level="error",
+            code="parser_validation_not_usable",
+            message="analysis run records a failed parser bundle",
+            path=root / "reports" / "parser_validation.json",
+        )
+
+    query_count = _count_jsonl_rows(root / "inputs" / "queries.jsonl", issues)
+    evidence_report = validate_evidence_contexts_jsonl(
+        root / "outputs" / "evidence_contexts.jsonl",
+        min_rows=1,
+        require_evidence=False,
+    )
+    if evidence_report["status"] == "error":
+        issues.extend(evidence_report["issues"])
+
+    index_info: dict[str, Any] = {}
+    index_path = root / "index" / "corpus.sqlite3"
+    try:
+        index_info = inspect_persistent_index(index_path)
+        if index_info.get("contract_version") != "analysis-sqlite-fts-index-v1":
+            _issue(
+                issues,
+                level="error",
+                code="invalid_index_contract",
+                message="persistent index contract is missing or unsupported",
+                path=index_path,
+            )
+        if int(index_info.get("chunk_count") or 0) <= 0:
+            _issue(
+                issues,
+                level="error",
+                code="empty_index",
+                message="persistent analysis index contains no chunks",
+                path=index_path,
+            )
+        if index_info.get("integrity") != "ok":
+            _issue(
+                issues,
+                level="error",
+                code="index_integrity_failed",
+                message=f"SQLite quick_check returned {index_info.get('integrity')}",
+                path=index_path,
+            )
+        if int(index_info.get("fts_chunk_count") or -1) != int(index_info.get("chunk_count") or 0):
+            _issue(
+                issues,
+                level="error",
+                code="fts_chunk_count_mismatch",
+                message="FTS and relational chunk counts do not match",
+                path=index_path,
+            )
+    except (FileNotFoundError, OSError, ValueError, RuntimeError, sqlite3.Error) as exc:
+        _issue(
+            issues,
+            level="error",
+            code="invalid_index",
+            message=str(exc),
+            path=index_path,
+        )
+
+    evidence_rows = int(evidence_report.get("counts", {}).get("rows") or 0)
+    if query_count != evidence_rows:
+        _issue(
+            issues,
+            level="error",
+            code="query_context_count_mismatch",
+            message=f"queries.jsonl has {query_count} rows but evidence output has {evidence_rows}",
+        )
+    summary_counts = summary.get("counts") if isinstance(summary.get("counts"), dict) else {}
+    if summary_counts and _int_count(summary_counts, "queries") != query_count:
+        _issue(
+            issues,
+            level="error",
+            code="summary_query_count_mismatch",
+            message="summary query count does not match queries.jsonl",
+            path=root / "summary.json",
+        )
+    stage_seconds = performance.get("stage_seconds") if isinstance(performance.get("stage_seconds"), dict) else {}
+    for required_stage in ("validate_parser_bundle", "load_parser_documents", "build_index", "query_index"):
+        if required_stage not in stage_seconds:
+            _issue(
+                issues,
+                level="error",
+                code="missing_performance_stage",
+                message=f"performance report is missing stage {required_stage}",
+                path=root / "reports" / "performance.json",
+            )
+
+    errors_path = root / "errors.jsonl"
+    errors_rows = _count_jsonl_rows(errors_path, issues)
+    if errors_rows:
+        _issue(
+            issues,
+            level="error",
+            code="run_errors_present",
+            message=f"errors.jsonl contains {errors_rows} rows",
+            path=errors_path,
+        )
+
+    counts = {
+        **_counts(issues),
+        "queries": query_count,
+        "evidence_contexts": evidence_rows,
+        "evidence_items": int(evidence_report.get("counts", {}).get("evidence_items") or 0),
+        "index_chunks": int(index_info.get("chunk_count") or 0),
+        "index_sources": int(index_info.get("source_count") or 0),
+        "run_errors": errors_rows,
+    }
+    return {
+        "contract": "offline-analysis-run-validation-v1",
+        "status": _status(issues, warnings_are_errors=warnings_are_errors),
+        "run_dir": str(root),
+        "counts": counts,
+        "index": index_info,
+        "evidence_contexts": evidence_report,
         "issues": issues,
     }

@@ -11,6 +11,13 @@ Legacy flat scripts live under `archive/legacy/scripts/`.
 Useful no-API canaries:
 
 ```bash
+python -m newsvlm_analysis run \
+  --parser-run-dir /path/to/parser/run \
+  --run-dir artifacts/runs/offline-analysis-canary \
+  --query "zoning ordinance apartment height"
+
+bash scripts/pipelines/submit_torch_offline_analysis.sh
+
 python scripts/pipelines/build_local_retrieval_context.py \
   --parser-run-dir /path/to/parser/run \
   --query "zoning ordinance apartment height" \
@@ -25,3 +32,6 @@ python scripts/pipelines/run_stack_contract_canary.py \
 bash scripts/pipelines/submit_torch_stack_contract_canary.sh \
   --parser-repo ../newspaper-parsing
 ```
+
+`python -m newsvlm_analysis run` is the canonical production workflow. The
+standalone retrieval-context and stack scripts are narrower contract canaries.

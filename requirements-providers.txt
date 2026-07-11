@@ -1,0 +1,7 @@
+# Optional compatibility dependencies for retained provider-specific workflows.
+# These are not installed or used by the canonical offline analysis CLI or its
+# Torch canary.
+
+-r requirements.txt
+openai
+google-genai

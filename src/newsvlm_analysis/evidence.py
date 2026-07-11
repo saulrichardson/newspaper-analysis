@@ -30,6 +30,7 @@ class EvidenceItem:
 class EvidenceContext:
     query: str
     evidence: list[EvidenceItem]
+    query_id: str = ""
     contract_version: str = "analysis-evidence-context-v1"
     task: str = "retrieval_context"
     provenance: dict[str, Any] = field(default_factory=dict)
@@ -128,10 +129,36 @@ def iter_parser_run_documents(
     if not fused_pages.is_dir():
         raise FileNotFoundError(f"parser run does not contain outputs/fused_pages: {run_dir}")
     run_metadata = parser_run_provenance(run_dir, validation_report=validation_report)
+    input_metadata: dict[str, dict[str, Any]] = {}
+    parse_input_path = run_dir / "manifests" / "parse_input.jsonl"
+    if parse_input_path.is_file():
+        with parse_input_path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                payload = json.loads(stripped)
+                if not isinstance(payload, dict):
+                    raise ValueError(f"{parse_input_path}:{line_number} must contain a JSON object")
+                page_id = str(payload.get("page_id") or "").strip()
+                if page_id:
+                    input_metadata[page_id] = payload
     for document in iter_fused_page_documents(fused_pages):
         metadata = dict(document.metadata)
         metadata.update(run_metadata)
         metadata["contract_source"] = "parser_run_bundle"
+        source_input = input_metadata.get(document.doc_id, {})
+        if source_input:
+            metadata.update(
+                {
+                    "issue_id": str(source_input.get("issue_id") or ""),
+                    "page_number": source_input.get("page_number"),
+                    "image_path": str(source_input.get("image_path") or ""),
+                    "checksum_sha256": str(source_input.get("checksum_sha256") or ""),
+                    "source": dict(source_input.get("source") or {}),
+                    "source_metadata": dict(source_input.get("metadata") or {}),
+                }
+            )
         yield SourceDocument(
             doc_id=document.doc_id,
             text=document.text,
@@ -163,6 +190,23 @@ def evidence_item_from_hit(hit: RetrievalHit) -> EvidenceItem:
         source_page_id=page_id,
         snippet=hit.text,
         metadata=metadata,
+    )
+
+
+def evidence_context_from_hits(
+    *,
+    query: str,
+    hits: Iterable[RetrievalHit],
+    query_id: str = "",
+    task: str = "retrieval_context",
+    provenance: dict[str, Any] | None = None,
+) -> EvidenceContext:
+    return EvidenceContext(
+        query=query,
+        query_id=query_id,
+        task=task,
+        evidence=[evidence_item_from_hit(hit) for hit in hits],
+        provenance=dict(provenance or {}),
     )
 
 

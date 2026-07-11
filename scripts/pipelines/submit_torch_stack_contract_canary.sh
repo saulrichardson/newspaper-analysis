@@ -5,7 +5,7 @@ set -euo pipefail
 
 REMOTE="${REMOTE:-torch}"
 ACCOUNT="${ACCOUNT:-torch_pr_609_general}"
-PARTITION="${PARTITION:-cs}"
+PARTITION="${PARTITION:-cpu_short}"
 REMOTE_BASE="${REMOTE_BASE:-}"
 LOCAL_PARSER_REPO="${LOCAL_PARSER_REPO:-../newspaper-parsing}"
 QUERY="${QUERY:-zoning ordinance apartment height}"
@@ -24,7 +24,7 @@ Flags:
   --remote-base PATH         Scratch root, default: /scratch/$REMOTE_USER/codex_hpc/newspaper_stack
   --parser-repo PATH         Local newspaper-parsing checkout, default: ../newspaper-parsing
   --account ACCOUNT          Slurm account, default: torch_pr_609_general
-  --partition PARTITION      Slurm partition, default: cs
+  --partition PARTITION      Slurm partition, default: cpu_short
   --query TEXT               Retrieval query for the smoke
   --timeout SECONDS          Poll timeout, default: 900
   --poll SECONDS             Poll interval, default: 10
@@ -105,7 +105,7 @@ fi
 PROJECT_ROOT="$REMOTE_BASE/newspaper-analysis"
 PARSER_PROJECT_ROOT="$REMOTE_BASE/newspaper-parsing"
 RUN_DIR="$REMOTE_BASE/runs/stack_contract_$(date -u +%Y%m%d_%H%M%S)"
-SCRIPT="slurm/pipelines/stack_contract_canary_cs.sbatch"
+SCRIPT="slurm/pipelines/stack_contract_canary_cpu_short.sbatch"
 LOCAL_PARSER_REPO_ABS="$(cd "$LOCAL_PARSER_REPO" && pwd)"
 
 echo "[plan] remote=$REMOTE"
@@ -116,6 +116,8 @@ echo "[plan] parser_project_root=$PARSER_PROJECT_ROOT"
 echo "[plan] local_parser_repo=$LOCAL_PARSER_REPO_ABS"
 echo "[plan] run_dir=$RUN_DIR"
 echo "[plan] query=$QUERY"
+echo "[plan] account=$ACCOUNT"
+echo "[plan] partition=$PARTITION"
 
 if [[ "$PLAN_ONLY" -eq 1 ]]; then
   echo "[plan] would sync analysis + parser repos and submit $SCRIPT"
@@ -166,7 +168,10 @@ JOB_ID="$(
 
 echo "[submit] job_id=$JOB_ID"
 echo "[submit] run_dir=$RUN_DIR"
-echo "[submit] logs=$REMOTE_BASE/logs/newspaper_stack_contract-$JOB_ID.out"
+LOG_OUT="$REMOTE_BASE/logs/newspaper_stack_contract-$JOB_ID.out"
+LOG_ERR="$REMOTE_BASE/logs/newspaper_stack_contract-$JOB_ID.err"
+echo "[submit] stdout=$LOG_OUT"
+echo "[submit] stderr=$LOG_ERR"
 
 if [[ "$WAIT" -eq 0 ]]; then
   exit 0
@@ -187,4 +192,19 @@ if [[ "$SECONDS" -ge "$deadline" ]]; then
   exit 3
 fi
 
+if ! ssh "$REMOTE" "test -f '$RUN_DIR/slurm_status.json'"; then
+  echo "ERROR: Slurm job did not produce $RUN_DIR/slurm_status.json" >&2
+  ssh "$REMOTE" "sacct -j '$JOB_ID' --format=JobID,State,ExitCode,Elapsed -n -P 2>/dev/null || true" >&2
+  ssh "$REMOTE" "tail -80 '$LOG_OUT' '$LOG_ERR' 2>/dev/null || true" >&2
+  exit 4
+fi
+
 ssh "$REMOTE" "cat '$RUN_DIR/slurm_status.json'"
+ssh "$REMOTE" "python3 - '$RUN_DIR/slurm_status.json'" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+status = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+raise SystemExit(0 if status.get("status") == "ok" else 1)
+PY

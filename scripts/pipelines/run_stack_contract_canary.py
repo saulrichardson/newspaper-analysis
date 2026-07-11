@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -29,8 +30,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--parser-python",
-        default=sys.executable,
-        help="Python executable for parser commands. Default: current Python.",
+        default=None,
+        help="Python executable for parser commands. Default: first candidate that imports parser dependencies.",
     )
     parser.add_argument(
         "--run-root",
@@ -175,7 +176,45 @@ def command_env(parser_repo: Path) -> dict[str, str]:
     env.pop("OPENAI_API_KEY", None)
     env.pop("OPENAI_KEY", None)
     env.pop("CODEX_API_KEY", None)
+    env.pop("ANTHROPIC_API_KEY", None)
+    env.pop("GOOGLE_API_KEY", None)
     return env
+
+
+def select_parser_python(explicit: str | None, parser_repo: Path) -> str:
+    candidates = [
+        explicit,
+        str(parser_repo / ".venv" / "bin" / "python"),
+        sys.executable,
+        shutil.which("python"),
+        shutil.which("python3"),
+    ]
+    checked: list[str] = []
+    for candidate in candidates:
+        if not candidate or candidate in checked:
+            continue
+        checked.append(candidate)
+        try:
+            completed = subprocess.run(
+                [candidate, "-c", "import PIL, numpy"],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        except OSError:
+            if explicit:
+                raise SystemExit(f"ERROR: --parser-python is not executable: {candidate}")
+            continue
+        if completed.returncode == 0:
+            return candidate
+        if explicit:
+            raise SystemExit(
+                f"ERROR: --parser-python cannot import Pillow and NumPy: {candidate}\n{completed.stderr}"
+            )
+    raise SystemExit(
+        "ERROR: no parser-capable Python found; pass --parser-python with Pillow and NumPy installed. "
+        f"Checked: {checked}"
+    )
 
 
 def run_json_command(
@@ -229,6 +268,7 @@ def main() -> int:
     parser_repo = args.parser_repo.expanduser().resolve()
     if not (parser_repo / "src" / "newsbag").is_dir():
         raise SystemExit(f"ERROR: --parser-repo does not look like newspaper-parsing: {parser_repo}")
+    parser_python = select_parser_python(args.parser_python, parser_repo)
 
     run_root = (args.run_root or default_run_root()).expanduser().resolve()
     inputs_dir = run_root / "inputs"
@@ -238,19 +278,34 @@ def main() -> int:
     image_path = inputs_dir / "stack-canary-page.pgm"
     adapter_script = inputs_dir / "stack_contract_adapter.py"
     bagging_config = inputs_dir / "bagging_config.json"
+    queries_jsonl = inputs_dir / "queries.jsonl"
     parser_manifest_validation = parser_run_dir / "reports" / "source_artifacts.validation.json"
     parser_bundle_validation = parser_run_dir / "reports" / "validation.json"
-    evidence_jsonl = analysis_dir / "evidence_contexts.jsonl"
-    analysis_validation = analysis_dir / "validation.json"
+    evidence_jsonl = analysis_dir / "outputs" / "evidence_contexts.jsonl"
+    analysis_validation = analysis_dir / "reports" / "validation.json"
+    stack_analysis_validation = analysis_dir / "reports" / "stack_validation.json"
 
     write_fixture_page(image_path)
     manifest_row = write_source_artifact_manifest(manifest, image_path)
     write_command_adapter(adapter_script, bagging_config, profile=str(args.profile))
+    queries_jsonl.write_text(
+        json.dumps(
+            {
+                "query_id": "stack-contract-query",
+                "query": str(args.query),
+                "task": "stack_contract_retrieval",
+                "relevant_page_ids": [manifest_row["page_id"]],
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     env = command_env(parser_repo)
 
     parser_manifest_report = run_json_command(
         [
-            str(args.parser_python),
+            parser_python,
             "-m",
             "newsbag",
             "validate-parse-input-manifest",
@@ -271,7 +326,7 @@ def main() -> int:
 
     parser_summary = run_json_command(
         [
-            str(args.parser_python),
+            parser_python,
             "-m",
             "newsbag",
             "bagging-canary",
@@ -291,7 +346,7 @@ def main() -> int:
 
     parser_bundle_report = run_json_command(
         [
-            str(args.parser_python),
+            parser_python,
             "-m",
             "newsbag",
             "validate-run",
@@ -310,44 +365,58 @@ def main() -> int:
     analysis_summary = run_json_command(
         [
             sys.executable,
-            str(REPO_ROOT / "scripts" / "pipelines" / "build_local_retrieval_context.py"),
+            "-m",
+            "newsvlm_analysis",
+            "run",
             "--parser-run-dir",
             str(parser_run_dir),
-            "--require-parser-validation-report",
-            "--query",
-            str(args.query),
-            "--output-jsonl",
-            str(evidence_jsonl),
-            "--output-format",
-            "contexts",
+            "--run-dir",
+            str(analysis_dir),
+            "--queries-jsonl",
+            str(queries_jsonl),
             "--top-k",
             str(args.top_k),
             "--chunk-words",
             str(args.chunk_words),
             "--overlap-words",
             str(args.overlap_words),
-            "--validation-json",
-            str(analysis_validation),
-        ]
-        + (["--strict-validation"] if args.strict_validation else []),
+        ],
         cwd=REPO_ROOT,
         env=env,
-        label="analysis_evidence_context",
+        label="offline_analysis_run",
     )
 
-    evidence_validation = dict((analysis_summary.get("validation") or {}).get("evidence_contexts") or {})
-    analysis_parser_validation = dict((analysis_summary.get("validation") or {}).get("parser_run") or {})
+    analysis_report = run_json_command(
+        [
+            sys.executable,
+            "-m",
+            "newsvlm_analysis",
+            "validate-run",
+            "--run-dir",
+            str(analysis_dir),
+            "--output-json",
+            str(stack_analysis_validation),
+        ]
+        + (["--warnings-as-errors"] if args.strict_validation else []),
+        cwd=REPO_ROOT,
+        env=env,
+        label="offline_analysis_validation",
+    )
+    evaluation = json.loads(
+        (analysis_dir / "reports" / "retrieval_evaluation.json").read_text(encoding="utf-8")
+    )
     status = (
         "ok"
         if parser_manifest_report.get("status") == "ok"
         and parser_bundle_report.get("status") == "ok"
-        and analysis_parser_validation.get("status") == "ok"
-        and evidence_validation.get("status") == "ok"
-        and int(analysis_summary.get("rows_written") or 0) > 0
+        and analysis_summary.get("status") == "ok"
+        and analysis_report.get("status") == "ok"
+        and int((analysis_summary.get("counts") or {}).get("evidence_items") or 0) > 0
+        and (evaluation.get("metrics") or {}).get("hit_rate_at_k") == 1.0
         else "error"
     )
     stack_summary = {
-        "contract": "newspaper-stack-contract-canary-v1",
+        "contract": "newspaper-stack-contract-canary-v2",
         "status": status,
         "run_root": str(run_root),
         "uses_external_llm_api": False,
@@ -356,10 +425,12 @@ def main() -> int:
             "page_image": str(image_path),
             "bagging_config": str(bagging_config),
             "command_adapter": str(adapter_script),
+            "queries_jsonl": str(queries_jsonl),
             "manifest_page_id": manifest_row["page_id"],
         },
         "parser": {
             "repo": str(parser_repo),
+            "python": parser_python,
             "profile": str(args.profile),
             "run_dir": str(parser_run_dir),
             "manifest_validation": parser_manifest_report,
@@ -368,9 +439,12 @@ def main() -> int:
         },
         "analysis": {
             "query": str(args.query),
+            "run_dir": str(analysis_dir),
             "evidence_contexts_jsonl": str(evidence_jsonl),
             "validation_json": str(analysis_validation),
             "summary": analysis_summary,
+            "validation": analysis_report,
+            "evaluation": evaluation,
         },
     }
     summary_path = run_root / "stack_summary.json"

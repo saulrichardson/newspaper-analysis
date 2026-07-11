@@ -1,8 +1,8 @@
 #!/bin/bash
-# CPU Slurm smoke for the acquisition-style manifest -> parser -> analysis stack contract.
+# Short CPU Slurm smoke for the acquisition-style manifest -> parser -> analysis stack contract.
 
 #SBATCH -A torch_pr_609_general
-#SBATCH -p cs
+#SBATCH -p cpu_short
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=3G
 #SBATCH --time=00:12:00
@@ -21,7 +21,7 @@ VENV_DIR="${VENV_DIR:-$BASE/envs/stack_py312}"
 BOOTSTRAP_PY="${BOOTSTRAP_PY:-}"
 ANALYSIS_PY="${ANALYSIS_PY:-$VENV_DIR/bin/python}"
 
-unset OPENAI_API_KEY OPENAI_KEY CODEX_API_KEY
+unset OPENAI_API_KEY OPENAI_KEY CODEX_API_KEY ANTHROPIC_API_KEY GOOGLE_API_KEY
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$RUN_DIR"
 
@@ -79,9 +79,11 @@ then
   exit 2
 fi
 
-"$ANALYSIS_PY" -m pip install --upgrade pip >/dev/null
-"$ANALYSIS_PY" -m pip install -e "$PARSER_PROJECT_ROOT" >/dev/null
-"$ANALYSIS_PY" -m pip install -e "$PROJECT_ROOT" >/dev/null
+export PYTHONPATH="$PARSER_PROJECT_ROOT/src:$PROJECT_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
+if ! "$ANALYSIS_PY" -c "import PIL, numpy" >/dev/null 2>&1; then
+  "$ANALYSIS_PY" -m pip install -e "$PARSER_PROJECT_ROOT" >/dev/null
+fi
+"$ANALYSIS_PY" -c "import PIL, newsbag, newsvlm_analysis, numpy" >/dev/null
 
 cd "$PROJECT_ROOT"
 set +e

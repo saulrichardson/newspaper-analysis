@@ -25,18 +25,18 @@ The implemented default is:
 
 Grounded local evidence already points in this direction:
 
-- [postgate_operative_transcription_models_20260306.md](/Users/saulrichardson/projects/newspapers/newspaper-analysis/artifacts/reports/postgate_operative_transcription_models_20260306.md)
+- local report artifact `artifacts/reports/postgate_operative_transcription_models_20260306.md`
   - shows that the post-gate image-backed prompt materially improves reconstruction quality on positive ordinance pages
-- [issue_image_multimodal_pilot_20260306.md](/Users/saulrichardson/projects/newspapers/newspaper-analysis/artifacts/reports/issue_image_multimodal_pilot_20260306.md)
+- local report artifact `artifacts/reports/issue_image_multimodal_pilot_20260306.md`
   - shows that full issue OCR plus issue page images can recover cleaner multi-page ordinance text than OCR-only
 
 The production prompt is:
 
-- [transcription_v13_issue_selected_images_postgate.txt](/Users/saulrichardson/projects/newspapers/newspaper-analysis/prompts/pipelines/transcription_v13_issue_selected_images_postgate.txt)
+- `prompts/pipelines/transcription_v13_issue_selected_images_postgate.txt`
 
 The runner is:
 
-- [run_postgate_issue_transcription.py](/Users/saulrichardson/projects/newspapers/newspaper-analysis/scripts/pipelines/run_postgate_issue_transcription.py)
+- `scripts/pipelines/run_postgate_issue_transcription.py`
 
 ## Input shape
 
@@ -117,9 +117,9 @@ There should be no `max_output_tokens` key unless someone adds it explicitly in 
 
 Whole-issue multimodal requests are slow. The repo is now configured so this path defaults to a long timeout:
 
-- [run_postgate_issue_transcription.py](/Users/saulrichardson/projects/newspapers/newspaper-analysis/scripts/pipelines/run_postgate_issue_transcription.py): `--timeout 21600`
-- [prepare_postgate_issue_transcription_gateway_run.py](/Users/saulrichardson/projects/newspapers/newspaper-analysis/scripts/pipelines/prepare_postgate_issue_transcription_gateway_run.py): records `timeout=21600` by default
-- [run_openai_requests_via_gateway.py](/Users/saulrichardson/projects/newspapers/newspaper-analysis/scripts/platform/run_openai_requests_via_gateway.py): `--timeout 21600` by default and propagates that into `GATEWAY_TIMEOUT_SECONDS`
+- `scripts/pipelines/run_postgate_issue_transcription.py`: `--timeout 21600`
+- `scripts/pipelines/prepare_postgate_issue_transcription_gateway_run.py`: records `timeout=21600` by default
+- `scripts/platform/run_openai_requests_via_gateway.py`: `--timeout 21600` by default and propagates that into `GATEWAY_TIMEOUT_SECONDS`
 
 This does not guarantee a provider never stalls, but it removes the avoidable short local timeout failure mode from this repo path.
 
@@ -144,7 +144,7 @@ python scripts/pipelines/run_postgate_issue_transcription.py \
   --issue-txt-dir /path/to/issue_txt \
   --manifest-path /path/to/gated_issues.csv \
   --torch-host torch \
-  --torch-png-root /scratch/sxr203/newspaper-downloads/dedupe-webp/unique_png \
+  --torch-png-root /scratch/$USER/newspaper-downloads/dedupe-webp/unique_png \
   --gateway-model openai:gpt-5.4 \
   --request-model gpt-5.4 \
   --reasoning-effort high
@@ -155,7 +155,7 @@ Prepared scale-out run with direct transcript and image paths:
 ```bash
 python scripts/pipelines/prepare_postgate_issue_transcription_gateway_run.py \
   --manifest-path /path/to/postgate_manifest.jsonl \
-  --output-dir /scratch/sxr203/postgate_issue_transcription_gateway_20260306 \
+  --output-dir /scratch/$USER/postgate_issue_transcription_gateway_20260306 \
   --worker-count 100 \
   --request-model gemini-3.1-pro-preview \
   --gateway-model gemini:gemini-3.1-pro-preview \
@@ -166,7 +166,7 @@ python scripts/pipelines/prepare_postgate_issue_transcription_gateway_run.py \
 Then run the prepared worker manifests through Slurm:
 
 ```bash
-PREPARED_RUN_ROOT=/scratch/sxr203/postgate_issue_transcription_gateway_20260306 \
+PREPARED_RUN_ROOT=/scratch/$USER/postgate_issue_transcription_gateway_20260306 \
 sbatch --array=0-99 slurm/pipelines/run_postgate_issue_transcription_gateway_array.sbatch
 ```
 

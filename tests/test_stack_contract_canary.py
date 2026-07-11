@@ -42,11 +42,18 @@ def test_stack_contract_canary_runs_against_sibling_parser(tmp_path: Path) -> No
     assert summary["uses_external_llm_api"] is False
     assert summary["parser"]["manifest_validation"]["status"] == "ok"
     assert summary["parser"]["run_validation"]["status"] == "ok"
-    parser_analysis = summary["analysis"]["summary"]["validation"]["parser_run"]
+    assert summary["contract"] == "newspaper-stack-contract-canary-v2"
+    parser_analysis = json.loads(
+        (Path(summary["analysis"]["run_dir"]) / "reports" / "parser_validation.json").read_text(
+            encoding="utf-8"
+        )
+    )
     assert parser_analysis["status"] == "ok"
     assert parser_analysis["counts"]["input_manifest_rows"] == 1
+    assert summary["analysis"]["validation"]["status"] == "ok"
+    assert summary["analysis"]["evaluation"]["metrics"]["hit_rate_at_k"] == 1.0
     evidence_contexts = Path(summary["analysis"]["evidence_contexts_jsonl"])
     row = json.loads(evidence_contexts.read_text(encoding="utf-8"))
-    assert row["provenance"]["parser_input_manifest_validation"]["status"] == "ok"
+    assert row["provenance"]["parser_run_id"] == "parser_run"
     assert row["evidence_count"] == 1
     assert (run_root / "stack_summary.json").is_file()

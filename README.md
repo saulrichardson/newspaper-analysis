@@ -1,16 +1,76 @@
 # `newspaper-analysis`
 
-This repository contains **analysis workflows** built on top of the upstream extraction artifacts produced by the
-`newsvlm` engine repo (OCR `*.vlm.json`, zoning labels, issue-level outputs, stitched ordinance docs, etc.).
+[![CI](https://github.com/saulrichardson/newspaper-analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/saulrichardson/newspaper-analysis/actions/workflows/ci.yml)
 
-It vendors the `agent-gateway` repo as an optional git submodule under `vendor/agent-gateway/` so that scripts can run
-many concurrent LLM requests locally without depending on a separate checkout.
+`newspaper-analysis` turns validated `newspaper-parsing` run bundles into
+persistent, evidence-first research corpora. The canonical workflow is fully
+offline: it indexes fused transcripts, executes repeatable question manifests,
+evaluates ranked evidence when gold labels are available, and emits a validated
+run bundle with parser provenance and performance measurements.
 
-If you need to make new extraction outputs, do that in the engine repo first, then point these scripts at the resulting
-artifacts.
+No external LLM API or API key is required. Higher-level local inference can be
+added after retrieval through an explicit adapter without changing the corpus,
+evidence, or evaluation contracts.
 
-Forward-looking analysis now starts from parser run bundles and fused page
-contracts. The no-API smoke path is:
+## Canonical workflow
+
+Install the dependency-light core package:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+Run one or more ad hoc questions against a parser run:
+
+```bash
+newspaper-analysis run \
+  --parser-run-dir /path/to/parser-run \
+  --run-dir artifacts/runs/zoning-research-001 \
+  --query "Which height limits were proposed near rail stations?" \
+  --query "What parking requirements applied to apartment buildings?"
+```
+
+For reproducible evaluation, use a JSONL query manifest:
+
+```json
+{"query_id":"height-policy","query":"zoning apartment height","task":"policy_retrieval","relevant_page_ids":["issue-a__p0003"]}
+{"query_id":"parking-policy","query":"parking requirement dwelling unit","task":"policy_retrieval","relevant_page_ids":["issue-a__p0004"]}
+```
+
+```bash
+newspaper-analysis run \
+  --parser-run-dir /path/to/parser-run \
+  --run-dir artifacts/runs/zoning-eval-001 \
+  --queries-jsonl queries.jsonl \
+  --top-k 10
+```
+
+Each run contains:
+
+- `index/corpus.sqlite3`: persistent SQLite FTS5 corpus index
+- `inputs/queries.jsonl`: normalized question and relevance manifest
+- `outputs/evidence_contexts.jsonl`: ranked, source-linked evidence packets
+- `reports/retrieval_evaluation.json`: hit rate, MRR, recall, and nDCG
+- `reports/performance.json`: index throughput and query latency
+- `reports/validation.json`: complete run-contract validation
+- `config.json`, `provenance.json`, `summary.json`, and `errors.jsonl`
+
+The index remains independently queryable:
+
+```bash
+newspaper-analysis search \
+  --index artifacts/runs/zoning-eval-001/index/corpus.sqlite3 \
+  --query "minimum lot area multifamily district" \
+  --top-k 5
+
+newspaper-analysis validate-run \
+  --run-dir artifacts/runs/zoning-eval-001
+```
+
+The older one-shot evidence builder remains useful for inspecting a single
+contract, but production work should use `newspaper-analysis run`:
 
 ```bash
 python scripts/pipelines/build_local_retrieval_context.py \
@@ -21,11 +81,23 @@ python scripts/pipelines/build_local_retrieval_context.py \
   --validation-json artifacts/scratch/evidence_contexts.validation.json
 ```
 
-This emits `analysis-evidence-context-v1` JSONL packets with ranked snippets,
-source page IDs, retrieval scores, parser model provenance, parser
-input-manifest validation metadata, and a provenance flag showing that no
-external LLM API was used. Parser-run inputs and emitted evidence-context
-packets are validated locally; no API key is required.
+This emits `analysis-evidence-context-v1` JSONL packets without building the
+persistent corpus or complete run bundle.
+
+## Torch canary
+
+The production run surface has a scheduler-backed CPU canary on NYU Torch:
+
+```bash
+bash scripts/pipelines/submit_torch_offline_analysis.sh
+```
+
+It syncs only public source files, creates a three-page parser fixture inside a
+fresh scratch run, verifies FTS5 support, builds and searches the index,
+evaluates gold page labels, validates the run bundle, and returns
+`slurm_status.json`. No provider credentials are loaded.
+
+## Cross-repo canary
 
 Cross-repo contract canary:
 
@@ -41,7 +113,7 @@ contexts, and writes `stack_summary.json`. It is intended to prove the
 acquisition-style manifest -> parser bundle -> analysis evidence handoff, not
 to run a production corpus.
 
-Torch stack canary:
+Torch acquisition-style manifest -> parser -> persistent analysis contract canary:
 
 ```bash
 bash scripts/pipelines/submit_torch_stack_contract_canary.sh \
@@ -50,6 +122,11 @@ bash scripts/pipelines/submit_torch_stack_contract_canary.sh \
 
 ## What lives here
 
+- `src/newsvlm_analysis/analysis_run.py`: canonical run orchestrator
+- `src/newsvlm_analysis/persistent_index.py`: atomic SQLite FTS5 index
+- `src/newsvlm_analysis/queries.py`: query manifests and ranked evaluation
+- `src/newsvlm_analysis/evidence.py`: evidence and parser-provenance contracts
+- `src/newsvlm_analysis/validation.py`: parser, evidence, and run validators
 - `src/newsvlm_analysis/frontier/`: active modular analysis code
 - `scripts/frontier/`: frontier entrypoints and report builders
 - `scripts/pipelines/`: active issue-classifier, transcription, and recovery workflows
@@ -76,35 +153,19 @@ Rule of thumb:
 - Commit active code, workflow docs, prompts, and curated reports.
 - Do not commit raw batch outputs, temporary run roots, ad-hoc scratch experiments, or generated report dumps.
 
-## Setup (local dev)
+## Scientific workflows
 
-1. Create a virtualenv:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   ```
-2. Initialize submodules (optional but recommended for LLM-backed workflows):
-   ```bash
-   git submodule update --init --recursive
-   ```
-3. Install the engine package (local path or a pinned git ref):
-   ```bash
-   # local sibling checkout
-   pip install -e ../newspaper-parsing
-   ```
-4. Install analysis package + dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. (Optional) Install the vendored gateway into the same env (needed for `scripts/platform/run_openai_requests_via_gateway.py` and other LLM-backed workflows):
-   ```bash
-   pip install -e vendor/agent-gateway
-   ```
+The dependency-light core intentionally uses only the Python standard library.
+Install `requirements.txt` for the retained pandas, clustering, embedding,
+visualization, and report workflows under `src/newsvlm_analysis/frontier/` and
+`scripts/frontier/`. Provider-specific historical workflows are not part of
+the canonical offline run and are not exercised by its tests or Torch canary;
+their compatibility dependencies are isolated in `requirements-providers.txt`.
 
 ## Notes on reproducibility
 
-For any run that generates downstream datasets or reports, record:
-- the `newsvlm` engine commit/tag used to generate inputs
-- the exact prompt files used
-- the source manifest(s) and run roots on VAST/Greene
-- the corresponding local `artifacts/runs/...` or `artifacts/reports/...` output location
+The canonical run automatically records parser commit and validation metadata,
+source-manifest fingerprints, parser model IDs, analysis commit, runtime
+versions, configuration, stage timings, and the normalized query manifest.
+Curated reports should cite the corresponding analysis run ID and retain its
+`summary.json` and `provenance.json`.

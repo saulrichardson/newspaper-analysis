@@ -4,11 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "newspaper-analysis"
-version = "0.1.0"
-description = "Analysis workflows built on top of `newsvlm` extraction artifacts."
+version = "0.2.0"
+description = "Evidence-first offline analysis for fused newspaper parsing artifacts."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
+
+[project.scripts]
+newspaper-analysis = "newsvlm_analysis.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

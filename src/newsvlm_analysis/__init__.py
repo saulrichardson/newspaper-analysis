@@ -6,4 +6,6 @@ This repo (`newspaper-analysis`) is intentionally split from the extraction/engi
   - analysis code can freely depend on heavier scientific Python stacks
 """
 
-__all__ = []
+__version__ = "0.2.0"
+
+__all__ = ["__version__"]

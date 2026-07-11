@@ -1,6 +1,6 @@
-# This repo depends on the `newsvlm` engine repo for core schemas + helpers.
-# Install the engine first (e.g. `pip install -e ../newspaper-parsing`) then:
-#   pip install -r requirements.txt
+# Optional scientific stack for frontier corpus, clustering, and report work.
+# The canonical offline analysis run uses only the dependency-free package in
+# pyproject.toml and does not require this file.
 
 # Install this repo as a package (so scripts can import `newsvlm_analysis.*`).
 -e .
@@ -14,7 +14,3 @@ matplotlib
 umap-learn
 hdbscan
 openpyxl
-
-# Provider clients used by some batch/export/labeling workflows.
-openai
-google-genai
